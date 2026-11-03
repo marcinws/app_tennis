@@ -2,11 +2,51 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Stan repozytorium
+## Polecenia
 
-Repozytorium nie ma jeszcze kodu ani manifestu pakietów, więc nie ma też poleceń build, lint i test. Uzupełnij tę sekcję o polecenia (w tym uruchamianie pojedynczego testu) i architekturę, gdy powstanie szkielet projektu.
+- `npm run dev` — serwer deweloperski (środowisko Cloudflare workerd)
+- `npm run build` — build produkcyjny (SSR przez `@astrojs/cloudflare`)
+- `npm run preview` — podgląd buildu produkcyjnego
+- `npm run lint` / `npm run lint:fix` — ESLint z regułami sprawdzającymi typy
+- `npm run format` — Prettier (z wtyczkami Astro i Tailwind)
+- `npx astro check` — sprawdzenie typów; CI uruchamia je po `npx astro sync`
+- `npm run smoke` — test przepływu logowania (`scripts/smoke.mjs`) na działającym serwerze pod `BASE_URL` (domyślnie `http://localhost:4321`). Uruchamiaj po aktualizacji zależności.
 
-Łańcuch nowego projektu: `/10x-init` -> `/10x-shape` -> `/10x-prd` -> `/10x-tech-stack-selector` -> `/10x-bootstrapper`. Gotowe są kroki do `/10x-prd` włącznie.
+Nie ma jeszcze runnera testów jednostkowych, więc nie da się uruchomić pojedynczego testu. Dopisz polecenie, gdy powstanie.
+
+Hook pre-commit (husky + lint-staged) uruchamia `eslint --fix` na `*.{ts,tsx,astro}` i `prettier --write` na `*.{json,css,md}`.
+
+Skrypty instalacyjne zależności są dopuszczane jawnie w `allowScripts` w `package.json` (npm 11). Po podbiciu wersji `esbuild` lub `workerd` zatwierdź je ponownie: `npm install-scripts approve esbuild workerd`.
+
+## Architektura
+
+Aplikacja Astro 7 w trybie SSR (`output: "server"`) z wyspami React 19, Tailwind 4, logowaniem przez Supabase i komponentami shadcn/ui, wdrażana na Cloudflare Workers. Szkielet pochodzi z `10x-astro-starter`; log bootstrapu jest w `context/changes/bootstrap-verification/verification.md`.
+
+### Logowanie
+
+- `src/lib/supabase.ts` tworzy klienta Supabase SSR (`@supabase/ssr`) z sesją w ciasteczkach. `SUPABASE_URL` i `SUPABASE_KEY` to sekrety serwerowe z `astro:env/server`, zadeklarowane w `env.schema` w `astro.config.mjs`.
+- `src/middleware.ts` przy każdym żądaniu ustala użytkownika w `context.locals.user` i przekierowuje niezalogowanych z tras w `PROTECTED_ROUTES`.
+- Endpointy: `src/pages/api/auth/{signin,signup,signout}.ts`. Strony: `src/pages/auth/{signin,signup,confirm-email}.astro`. Przykład chronionej strony: `src/pages/dashboard.astro`.
+
+### Konwencje
+
+- Alias `@/*` wskazuje na `./src/*`.
+- Komponenty Astro do treści statycznej i layoutu; React tylko tam, gdzie potrzebna jest interaktywność. Bez dyrektyw Next.js (`"use client"`). Hooki w `src/components/hooks/`.
+- Klasy Tailwind łącz helperem `cn()` z `@/lib/utils`, nie sklejaj stringów ręcznie.
+- shadcn/ui: komponenty w `src/components/ui/`, styl "new-york", nowe dodawaj przez `npx shadcn@latest add <nazwa>`.
+- Trasy API eksportują `GET`/`POST` wielkimi literami i `const prerender = false`; wejście waliduj zodem.
+- Logika biznesowa (np. liczenie wyniku) w `src/lib/` lub `src/lib/services/`, wspólne typy w `src/types.ts`.
+- Migracje Supabase w `supabase/migrations/` z nazwą `YYYYMMDDHHmmss_krotki_opis.sql`. Każda nowa tabela ma włączone RLS z osobnymi politykami na operację i rolę.
+
+### Środowisko
+
+- Node.js 26 (`.nvmrc`: 26.13.0, CI: 26).
+- Końce linii LF wymusza `.gitattributes`, bo Prettier odrzuca CRLF, a git na Windows z `core.autocrlf=true` domyślnie zapisuje pliki z CRLF.
+- ESLint pomija `.claude/` (`globalIgnores` w `eslint.config.js`), bo to zarządzane skille kursu, nie kod projektu.
+- Zmienne: `SUPABASE_URL`, `SUPABASE_KEY`. Skopiuj `.env.example` do `.env` (Node) albo do `.dev.vars` (lokalny Cloudflare, plik ignorowany przez git).
+- Lokalny Supabase: `npx supabase start` (wymaga Dockera). Wdrożenie ręczne: `npx wrangler deploy`.
+- CI (`.github/workflows/ci.yml`) uruchamia lint, `astro check`, build i test smoke z lokalnym Supabase. Build wymaga sekretów repozytorium `SUPABASE_URL` i `SUPABASE_KEY`.
+- `AGENTS.md` to w repozytorium startera dowiązanie do `CLAUDE.md`; na Windowsie jest zwykłym plikiem z tą nazwą.
 
 ## Źródła zakresu
 
