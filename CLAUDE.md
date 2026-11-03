@@ -4,9 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stan repozytorium
 
-Repozytorium nie ma jeszcze kodu, commitów, manifestu pakietów ani katalogu `context/`, więc nie ma też poleceń build, lint i test. Uzupełnij tę sekcję o polecenia (w tym uruchamianie pojedynczego testu) i architekturę, gdy powstanie szkielet projektu.
+Repozytorium nie ma jeszcze kodu ani manifestu pakietów, więc nie ma też poleceń build, lint i test. Uzupełnij tę sekcję o polecenia (w tym uruchamianie pojedynczego testu) i architekturę, gdy powstanie szkielet projektu.
 
-Punkt startowy łańcucha nowego projektu: `/10x-init` -> `/10x-shape` -> `/10x-prd` -> `/10x-tech-stack-selector` -> `/10x-bootstrapper`.
+Łańcuch nowego projektu: `/10x-init` -> `/10x-shape` -> `/10x-prd` -> `/10x-tech-stack-selector` -> `/10x-bootstrapper`. Gotowe są kroki do `/10x-prd` włącznie.
+
+## Źródła zakresu
+
+- Obowiązujący zakres MVP opisuje `context/foundation/prd.md`. Ma pierwszeństwo przed `context/foundation/shape-notes.md`, który nie zawiera późniejszych zmian w PRD.
+- `idea/` to materiały historyczne sprzed ustalenia zakresu, np. pełny offline, osobne konto drugiego rodzica i sześć formatów. Nie traktuj ich jako wymagań.
 
 ## Zestaw 10x-cli
 
