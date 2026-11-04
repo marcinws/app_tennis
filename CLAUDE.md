@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Źródła zakresu
+
+- Obowiązujący zakres MVP opisuje `context/foundation/prd.md`. Ma pierwszeństwo przed `context/foundation/shape-notes.md`, który nie zawiera późniejszych zmian w PRD.
+- `idea/` to materiały historyczne sprzed ustalenia zakresu, np. pełny offline, osobne konto drugiego rodzica i sześć formatów. Nie traktuj ich jako wymagań.
+
+## Twarde zasady projektu
+
+- Każda nowa tabela Supabase ma włączone RLS z osobnymi politykami na operację i rolę. Mecze i notatki widzi wyłącznie zalogowany właściciel konta (NFR w PRD).
+
 ## Polecenia
 
 - `npm run dev` — serwer deweloperski (środowisko Cloudflare workerd)
@@ -14,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Nie ma jeszcze runnera testów jednostkowych, więc nie da się uruchomić pojedynczego testu. Dopisz polecenie, gdy powstanie.
 
-Hook pre-commit (husky + lint-staged) uruchamia `eslint --fix` na `*.{ts,tsx,astro}` i `prettier --write` na `*.{json,css,md}`.
+Hook pre-commit (husky + lint-staged) uruchamia `eslint --fix` na `*.{ts,tsx,astro}` i `prettier --write` na `*.{json,css,md}`. Husky ustawia `core.hooksPath` w skrypcie `prepare`, więc po świeżym klonie hook działa dopiero po `npm install`.
 
 Skrypty instalacyjne zależności są dopuszczane jawnie w `allowScripts` w `package.json` (npm 11). Po podbiciu wersji `esbuild` lub `workerd` zatwierdź je ponownie: `npm install-scripts approve esbuild workerd`.
 
@@ -30,28 +39,22 @@ Aplikacja Astro 7 w trybie SSR (`output: "server"`) z wyspami React 19, Tailwind
 
 ### Konwencje
 
-- Alias `@/*` wskazuje na `./src/*`.
-- Komponenty Astro do treści statycznej i layoutu; React tylko tam, gdzie potrzebna jest interaktywność. Bez dyrektyw Next.js (`"use client"`). Hooki w `src/components/hooks/`.
+- Strony i layouty to pliki `.astro`. React tylko dla elementów ze stanem lub obsługą zdarzeń na kliencie (np. przyciski punktów, cofanie). Bez dyrektyw Next.js (`"use client"`). Hooki w `src/components/hooks/`.
 - Klasy Tailwind łącz helperem `cn()` z `@/lib/utils`, nie sklejaj stringów ręcznie.
 - shadcn/ui: komponenty w `src/components/ui/`, styl "new-york", nowe dodawaj przez `npx shadcn@latest add <nazwa>`.
-- Trasy API eksportują `GET`/`POST` wielkimi literami i `const prerender = false`; wejście waliduj zodem.
-- Logika biznesowa (np. liczenie wyniku) w `src/lib/` lub `src/lib/services/`, wspólne typy w `src/types.ts`.
-- Migracje Supabase w `supabase/migrations/` z nazwą `YYYYMMDDHHmmss_krotki_opis.sql`. Każda nowa tabela ma włączone RLS z osobnymi politykami na operację i rolę.
+- Trasy API eksportują handlery `GET`/`POST` typu `APIRoute`. Nowe trasy walidują wejście przez `z` z `astro/zod` (bez osobnej zależności `zod`), zamiast rzutować dane formularza `as string` jak w `src/pages/api/auth/*`.
+- Reguły liczenia wyniku i inne czyste funkcje domenowe w `src/lib/services/<obszar>.ts`, bez importów z Astro i Supabase, żeby dało się je testować w izolacji. W `src/lib/` tylko infrastruktura (`supabase.ts`, `utils.ts`). Wspólne typy w `src/types.ts`.
+- Migracje Supabase w `supabase/migrations/` z nazwą `YYYYMMDDHHmmss_krotki_opis.sql`.
 
 ### Środowisko
 
 - Node.js 26 (`.nvmrc`: 26.13.0, CI: 26).
 - Końce linii LF wymusza `.gitattributes`, bo Prettier odrzuca CRLF, a git na Windows z `core.autocrlf=true` domyślnie zapisuje pliki z CRLF.
 - ESLint pomija `.claude/` (`globalIgnores` w `eslint.config.js`), bo to zarządzane skille kursu, nie kod projektu.
-- Zmienne: `SUPABASE_URL`, `SUPABASE_KEY`. Skopiuj `.env.example` do `.env` (Node) albo do `.dev.vars` (lokalny Cloudflare, plik ignorowany przez git).
-- Lokalny Supabase: `npx supabase start` (wymaga Dockera). Wdrożenie ręczne: `npx wrangler deploy`.
-- CI (`.github/workflows/ci.yml`) uruchamia lint, `astro check`, build i test smoke z lokalnym Supabase. Build wymaga sekretów repozytorium `SUPABASE_URL` i `SUPABASE_KEY`.
-- `AGENTS.md` to w repozytorium startera dowiązanie do `CLAUDE.md`; na Windowsie jest zwykłym plikiem z tą nazwą.
-
-## Źródła zakresu
-
-- Obowiązujący zakres MVP opisuje `context/foundation/prd.md`. Ma pierwszeństwo przed `context/foundation/shape-notes.md`, który nie zawiera późniejszych zmian w PRD.
-- `idea/` to materiały historyczne sprzed ustalenia zakresu, np. pełny offline, osobne konto drugiego rodzica i sześć formatów. Nie traktuj ich jako wymagań.
+- Konfiguracja Supabase, zmienne środowiskowe i wdrożenie: @README.md.
+- Bez `SUPABASE_URL` i `SUPABASE_KEY` build przechodzi, ale `createClient` w `src/lib/supabase.ts` zwraca `null` i logowanie jest wyłączone.
+- CI (`.github/workflows/ci.yml`) uruchamia lint, `astro check`, build i test smoke z lokalnym Supabase. Wersja Supabase CLI w CI musi być równa `supabase` w `package.json`, bo CLI 3.x odrzuca sekcję `[inbucket]` w `supabase/config.toml`.
+- Zasady dopisuj w `CLAUDE.md`; `AGENTS.md` tylko wskazuje na ten plik.
 
 ## Zestaw 10x-cli
 
