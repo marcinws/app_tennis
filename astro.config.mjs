@@ -14,6 +14,8 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
   adapter: cloudflare(),
+  // Supabase keeps the auth session in cookies; disabling Astro sessions stops the adapter from provisioning a SESSION KV.
+  session: false,
   env: {
     schema: {
       SUPABASE_URL: envField.string({ context: "server", access: "secret", optional: true }),
