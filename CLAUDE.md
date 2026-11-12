@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint` / `npm run lint:fix` — ESLint z regułami sprawdzającymi typy
 - `npm run format` — Prettier (z wtyczkami Astro i Tailwind)
 - `npx astro check` — sprawdzenie typów; CI uruchamia je po `npx astro sync`
-- `npm run smoke` — test przepływu logowania (`scripts/smoke.mjs`) na działającym serwerze pod `BASE_URL` (domyślnie `http://localhost:4321`). Uruchamiaj po aktualizacji zależności.
+- `npm run smoke` — test przepływu logowania (`scripts/smoke.mjs`) na działającym serwerze pod `BASE_URL` (domyślnie `http://localhost:4321`). Uruchamiaj po aktualizacji zależności. Tryb domyślny zakłada konto, więc na produkcji uruchamiaj wyłącznie `SMOKE_MODE=production`, który niczego nie zapisuje.
 
 Nie ma jeszcze runnera testów jednostkowych, więc nie da się uruchomić pojedynczego testu. Dopisz polecenie, gdy powstanie.
 

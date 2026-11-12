@@ -1,7 +1,9 @@
 // Smoke test: proves the built app, the Cloudflare adapter and the Supabase auth flow still work together.
 // Zero dependencies on purpose. Run against a live server: BASE_URL=http://localhost:4321 node scripts/smoke.mjs
+// SMOKE_MODE=full (default) creates an account; SMOKE_MODE=production writes nothing and is the only mode safe for production.
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:4321";
+const MODE = process.env.SMOKE_MODE ?? "full";
 const email = `smoke-${Date.now()}@example.com`;
 const password = "Smoke-Test-Passw0rd!";
 const jar = new Map();
@@ -35,7 +37,7 @@ async function request(path, { method = "GET", form } = {}) {
   return { status: response.status, location: response.headers.get("location") ?? "", body: await response.text() };
 }
 
-const steps = [
+const fullSteps = [
   ["home renders", () => request("/"), { status: 200 }],
   ["dashboard redirects anonymous user", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
   [
@@ -63,6 +65,30 @@ const steps = [
   ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, location: "/" }],
   ["dashboard redirects after signout", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
 ];
+
+// Read-only checks: a sign-in attempt for an account that does not exist proves the Worker reaches Supabase.
+const productionSteps = [
+  ["home renders", () => request("/"), { status: 200 }],
+  ["dashboard redirects anonymous user", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
+  ["signin page renders", () => request("/auth/signin"), { status: 200 }],
+  [
+    "signin reaches Supabase",
+    () =>
+      request("/api/auth/signin", {
+        method: "POST",
+        form: { email: `smoke-probe-${Date.now()}@example.com`, password },
+      }),
+    { status: 302, location: "/auth/signin?error=Invalid%20login%20credentials" },
+  ],
+];
+
+const stepsByMode = { full: fullSteps, production: productionSteps };
+const steps = Object.hasOwn(stepsByMode, MODE) ? stepsByMode[MODE] : null;
+if (!steps) {
+  console.log(`Unknown SMOKE_MODE "${MODE}", expected one of: ${Object.keys(stepsByMode).join(", ")}`);
+  process.exit(1);
+}
+console.log(`Smoke mode: ${MODE} against ${BASE_URL}`);
 
 let failed = 0;
 for (const [name, run, expected] of steps) {

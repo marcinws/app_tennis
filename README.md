@@ -176,7 +176,7 @@ npm run dev            # or: npm run build && npm run preview
 BASE_URL=http://localhost:4321 npm run smoke
 ```
 
-It needs a reachable Supabase instance (local or cloud) with email confirmation disabled.
+It needs a reachable Supabase instance (local or cloud) with email confirmation disabled. The default mode creates an account, so against production run only `SMOKE_MODE=production npm run smoke`, which writes no data.
 
 > **Note:** this script exists primarily to guard the development of the starter itself — it is a fast sanity check that dependency upgrades did not break the build, the Cloudflare adapter or the Supabase auth flow. It is **not** a substitute for a real test suite. Once you build your own product on top of this starter, add proper tests (unit, integration, end-to-end) suited to your application.
 
