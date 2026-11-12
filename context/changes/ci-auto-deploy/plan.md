@@ -259,17 +259,17 @@ Brak migracji danych. Pierwszy przebieg z jobem `deploy` utworzy GitHub Environm
 
 #### Automated
 
-- [x] 2.1 `CLOUDFLARE_ACCOUNT_ID` w `gh secret list`
-- [ ] 2.2 Przebieg CI na `main` zielony we wszystkich trzech jobach
-- [x] 2.3 Job `deploy` nie uruchamia się dla pull requestów
-- [ ] 2.4 `wrangler deployments list` pokazuje wersję z SHA commita
-- [ ] 2.5 Produkcyjny smoke przechodzi po wdrożeniu z CI
-- [ ] 2.6 Brak adnotacji o Node 20
+- [x] 2.1 `CLOUDFLARE_ACCOUNT_ID` w `gh secret list` — c0f1c81
+- [x] 2.2 Przebieg CI na `main` zielony we wszystkich trzech jobach — c0f1c81
+- [x] 2.3 Job `deploy` nie uruchamia się dla pull requestów — c0f1c81
+- [x] 2.4 `wrangler deployments list` pokazuje wersję z SHA commita — c0f1c81
+- [x] 2.5 Produkcyjny smoke przechodzi po wdrożeniu z CI — c0f1c81
+- [x] 2.6 Brak adnotacji o Node 20 — c0f1c81
 
 #### Manual
 
-- [ ] 2.7 Środowisko `production` z wpisem wdrożenia na GitHubie
-- [ ] 2.8 Aplikacja działa na telefonie po wdrożeniu z CI
+- [x] 2.7 Środowisko `production` z wpisem wdrożenia na GitHubie — c0f1c81
+- [x] 2.8 Aplikacja działa na telefonie po wdrożeniu z CI — c0f1c81
 
 ### Phase 3: Próba generalna rollbacku i dokumentacja
 
