@@ -75,8 +75,8 @@ Zmienne środowiskowe:
 - 5.1 **[Claude]** ✅ `curl -sI <URL>/` → 200; `curl -sI <URL>/dashboard` → 302 na `/auth/signin`.
 - 5.2 **[Claude]** ✅ `BASE_URL=<URL> npm run smoke` — rejestracja, logowanie, strona chroniona, wylogowanie. Niepowodzenie przy logowaniu = sprawdzić sekrety (4.3) i Confirm email (3.2).
 - 5.3 **[Claude]** ✅ W trakcie smoke: `npx wrangler tail --format pretty --status error` — brak błędów.
-- 5.4 **[Ty]** Usuń konta testowe: Supabase → Authentication → Users, filtr `smoke-` → usuń (albo SQL Editor: `delete from auth.users where email like 'smoke-%@example.com';`).
-- 5.5 **[Ty]** Telefon z Androidem, sieć komórkowa: otwórz adres, załóż konto, zaloguj się, otwórz `/dashboard`. Odczucie czasu odpowiedzi.
+- 5.4 **[Ty]** ✅ Usuń konta testowe: Supabase → Authentication → Users, filtr `smoke-` → usuń (albo SQL Editor: `delete from auth.users where email like 'smoke-%@example.com';`).
+- 5.5 **[Ty]** ✅ Telefon z Androidem, sieć komórkowa: otwórz adres, załóż konto, zaloguj się, otwórz `/dashboard`. Odczucie czasu odpowiedzi.
 - 5.6 **[Ty/Claude]** Panel Cloudflare → Workers → tennis-match-companion → Observability: CPU time żądań SSR wyraźnie poniżej 10 ms (ryzyko limitu planu Free).
 
 Kryterium sukcesu: 5.1–5.3 zielone, 5.5 bez problemów, brak błędów 1102 w logach.
