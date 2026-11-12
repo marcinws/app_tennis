@@ -32,7 +32,7 @@ async function request(path, { method = "GET", form } = {}) {
     body: form ? new URLSearchParams(form).toString() : undefined,
   });
   storeCookies(response);
-  return { status: response.status, location: response.headers.get("location") ?? "" };
+  return { status: response.status, location: response.headers.get("location") ?? "", body: await response.text() };
 }
 
 const steps = [
@@ -42,6 +42,12 @@ const steps = [
     "signup creates account",
     () => request("/api/auth/signup", { method: "POST", form: { email, password } }),
     { status: 302, location: "/auth/confirm-email" },
+  ],
+  // Email confirmation is disabled for the smoke run, so signup must not tell the user to check their inbox.
+  [
+    "confirm page reports auto-confirmed account",
+    () => request("/auth/confirm-email"),
+    { status: 200, text: "Registration successful" },
   ],
   [
     "signin rejects wrong password",
@@ -63,11 +69,14 @@ for (const [name, run, expected] of steps) {
   const actual = await run();
   const ok =
     actual.status === expected.status &&
-    (expected.location === undefined || actual.location.startsWith(expected.location));
+    (expected.location === undefined || actual.location.startsWith(expected.location)) &&
+    (expected.text === undefined || actual.body.includes(expected.text));
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}  -> ${actual.status} ${actual.location}`);
   if (!ok) {
     failed++;
-    console.log(`      expected ${expected.status} ${expected.location ?? ""}`);
+    console.log(
+      `      expected ${expected.status} ${expected.location ?? ""}${expected.text ? ` with "${expected.text}"` : ""}`,
+    );
   }
 }
 

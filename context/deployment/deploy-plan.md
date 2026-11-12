@@ -47,7 +47,7 @@ Poza zakresem pierwszego wdrożenia (ryzyko z rejestru, osobna zmiana): zmiana `
 
 - 3.1 **[Ty]** Region sprawdzony 2026-11-12: `eu-west-1` (Irlandia), nie zalecany `eu-central-1`. Decyzja: zostajemy. Polska–Irlandia to ok. 20–40 ms więcej na stronę SSR niż Frankfurt (szacunek), a ryzyko z `infrastructure.md` dotyczyło regionu w USA. Wymaganie 200 ms od dotknięcia spełnia zapis na urządzeniu (FR-011). Weryfikacja w 5.5; jeśli strony będą wolne, nowy projekt we Frankfurcie, póki nie ma prawdziwych danych.
 - 3.2 **[Ty]** Authentication → Sign In / Providers → Email: **Confirm email = off** (MVP, wymagane przez smoke).
-- 3.3 **[Ty]** Authentication → URL Configuration: po kroku 4 ustaw **Site URL** na `https://tennis-match-companion.<subdomena>.workers.dev` i dodaj go do Redirect URLs.
+- 3.3 **[Ty]** ✅ Authentication → URL Configuration: po kroku 4 ustaw **Site URL** na `https://tennis-match-companion.<subdomena>.workers.dev` i dodaj go do Redirect URLs.
 - 3.4 **[Ty]** Przekaż mi wartości tylko przez terminal przy `wrangler secret put` (krok 4.2) — nie wklejaj klucza do czatu. `SUPABASE_KEY` to klucz `anon`/publishable, nie `service_role`.
 - 3.5 Migracje: brak. Gdy powstaną, będą wdrażane przed kodem i pisane wstecznie zgodnie (patrz Rollback).
 
@@ -112,5 +112,7 @@ Rollback dotyczy jednej ze 100 ostatnich wersji. Logi z 3 dni w Workers Logs —
 ## Dziennik wdrożeń
 
 | 2026-11-12 | `5301db83-921e-42ef-ab07-e305a6f19fa8` | `c4a7d42` | 8/8 PASS | Pierwsze wdrożenie, ręczne `wrangler deploy`; https://tennis-match-companion.marcin-wojcik-swidnik.workers.dev |
-| ---------- | -------------------------------------- | --------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-|            |                                        |           |          |                                                                                                                |
+
+| 2026-11-12 | `e120b908-5d47-464d-b05c-5fbfc62f1979` | (ten commit) | 9/9 PASS | Poprawka komunikatu po rejestracji; najpierw podgląd `versions upload --preview-alias fix-confirm`, potem `versions deploy` |
+| ---------- | -------------------------------------- | ------------ | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+|            |                                        |              |          |                                                                                                                             |

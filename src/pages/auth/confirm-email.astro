@@ -1,7 +1,8 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 
-const isAutoConfirmed = import.meta.env.DEV;
+// Supabase returns a session from signUp only when email confirmation is disabled, so a signed-in user here is already confirmed.
+const isAutoConfirmed = Astro.locals.user !== null;
 
 const content = isAutoConfirmed
   ? {
