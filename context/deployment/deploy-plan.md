@@ -19,7 +19,7 @@ Legenda: **[Claude]** — Claude Code wykonuje sam (odczyt, build, testy, przygo
 | -------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
 | Platforma      | Cloudflare Workers, Worker ze statycznymi zasobami (`wrangler.jsonc`, `@astrojs/cloudflare` 14.4) | Bez zmian w kodzie                                 |
 | Nazwa Workera  | `tennis-match-companion` (od 2026-11-10)                                                          | Zrobione (krok 2.1)                                |
-| Supabase       | Projekt w chmurze, `eu-central-1`; URL i klucz w GitHub secrets                                   | Te same wartości trafią do sekretów Workera        |
+| Supabase       | Projekt w chmurze, `eu-west-1` (Irlandia); URL i klucz w GitHub secrets                           | Te same wartości trafią do sekretów Workera        |
 | Migracje       | Brak `supabase/migrations/`; używane tylko `auth.users`                                           | Pierwsze wdrożenie bez migracji                    |
 | CI             | `ci.yml`: job `ci` (lint, `astro check`, build) i `smoke` (lokalny Supabase); zielone             | Brak kroku wdrożenia (etap 6)                      |
 | Node.js        | `.nvmrc` 26.13.0, CI `node-version: 26`, lokalnie v26.13.0                                        | Zgodne                                             |
@@ -43,9 +43,9 @@ Wykonane 2026-11-10: nazwa Workera zmieniona, `session: false` w `astro.config.m
 
 Poza zakresem pierwszego wdrożenia (ryzyko z rejestru, osobna zmiana): zmiana `optional: true` na wymagane sekrety.
 
-## 3. Supabase (istniejący projekt, Frankfurt)
+## 3. Supabase (istniejący projekt, Irlandia `eu-west-1`)
 
-- 3.1 **[Ty]** Panel Supabase → Settings → General: potwierdź region `eu-central-1`.
+- 3.1 **[Ty]** Region sprawdzony 2026-11-12: `eu-west-1` (Irlandia), nie zalecany `eu-central-1`. Decyzja: zostajemy. Polska–Irlandia to ok. 20–40 ms więcej na stronę SSR niż Frankfurt (szacunek), a ryzyko z `infrastructure.md` dotyczyło regionu w USA. Wymaganie 200 ms od dotknięcia spełnia zapis na urządzeniu (FR-011). Weryfikacja w 5.5; jeśli strony będą wolne, nowy projekt we Frankfurcie, póki nie ma prawdziwych danych.
 - 3.2 **[Ty]** Authentication → Sign In / Providers → Email: **Confirm email = off** (MVP, wymagane przez smoke).
 - 3.3 **[Ty]** Authentication → URL Configuration: po kroku 4 ustaw **Site URL** na `https://tennis-match-companion.<subdomena>.workers.dev` i dodaj go do Redirect URLs.
 - 3.4 **[Ty]** Przekaż mi wartości tylko przez terminal przy `wrangler secret put` (krok 4.2) — nie wklejaj klucza do czatu. `SUPABASE_KEY` to klucz `anon`/publishable, nie `service_role`.
@@ -63,23 +63,25 @@ Zmienne środowiskowe:
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | GitHub secrets                                | [Ty], dopiero w etapie 6         |
 
 - 4.1 **[Claude]** `npm ci && npm run build` na czystym `main`; `npx wrangler deploy --dry-run` — kontrola bundla i bindingów bez wdrożenia.
-- 4.2 **[Ty]** Sekrety (wrangler zaproponuje utworzenie Workera, jeśli jeszcze nie istnieje — potwierdź):
+- 4.2 **[Ty]** ✅ Sekrety (wrangler zaproponuje utworzenie Workera, jeśli jeszcze nie istnieje — potwierdź):
   - `! npx wrangler secret put SUPABASE_URL`
   - `! npx wrangler secret put SUPABASE_KEY`
-- 4.3 **[Claude]** `npx wrangler secret list` — obie nazwy widoczne.
-- 4.4 **[Ty — zgoda]** Wdrożenie produkcyjne: `npx wrangler deploy` (mogę je uruchomić po Twoim wyraźnym „wdrażaj”). Zapisz adres `https://tennis-match-companion.<subdomena>.workers.dev`.
-- 4.5 **[Claude]** `npx wrangler deployments list` — zapisanie ID wersji w tym pliku (sekcja Dziennik).
+- 4.3 **[Claude]** ✅ `npx wrangler secret list` — obie nazwy widoczne.
+- 4.4 **[Ty — zgoda]** ✅ Wdrożenie produkcyjne: `npx wrangler deploy` (mogę je uruchomić po Twoim wyraźnym „wdrażaj”). Zapisz adres `https://tennis-match-companion.<subdomena>.workers.dev`.
+- 4.5 **[Claude]** ✅ `npx wrangler deployments list` — zapisanie ID wersji w tym pliku (sekcja Dziennik).
 
 ## 5. Testy po wdrożeniu
 
-- 5.1 **[Claude]** `curl -sI <URL>/` → 200; `curl -sI <URL>/dashboard` → 302 na `/auth/signin`.
-- 5.2 **[Claude]** `BASE_URL=<URL> npm run smoke` — rejestracja, logowanie, strona chroniona, wylogowanie. Niepowodzenie przy logowaniu = sprawdzić sekrety (4.3) i Confirm email (3.2).
-- 5.3 **[Claude]** W trakcie smoke: `npx wrangler tail --format pretty --status error` — brak błędów.
+- 5.1 **[Claude]** ✅ `curl -sI <URL>/` → 200; `curl -sI <URL>/dashboard` → 302 na `/auth/signin`.
+- 5.2 **[Claude]** ✅ `BASE_URL=<URL> npm run smoke` — rejestracja, logowanie, strona chroniona, wylogowanie. Niepowodzenie przy logowaniu = sprawdzić sekrety (4.3) i Confirm email (3.2).
+- 5.3 **[Claude]** ✅ W trakcie smoke: `npx wrangler tail --format pretty --status error` — brak błędów.
 - 5.4 **[Ty]** Usuń konta testowe: Supabase → Authentication → Users, filtr `smoke-` → usuń (albo SQL Editor: `delete from auth.users where email like 'smoke-%@example.com';`).
 - 5.5 **[Ty]** Telefon z Androidem, sieć komórkowa: otwórz adres, załóż konto, zaloguj się, otwórz `/dashboard`. Odczucie czasu odpowiedzi.
 - 5.6 **[Ty/Claude]** Panel Cloudflare → Workers → tennis-match-companion → Observability: CPU time żądań SSR wyraźnie poniżej 10 ms (ryzyko limitu planu Free).
 
 Kryterium sukcesu: 5.1–5.3 zielone, 5.5 bez problemów, brak błędów 1102 w logach.
+
+Wynik 2026-11-12 (wersja `5301db83`): 5.1–5.3 zielone, 0 wyjątków i błędów w logach, wszystkie żądania `ok`. Czas CPU: ciepłe żądania 1–8 ms; pierwsze żądania po starcie izolatu 13 ms (`/`) i 56 ms (`/auth/signin`) — powyżej 10 ms planu Free, mimo to obsłużone. Obserwować w Workers Logs; przy błędach 1102 przejść na Workers Paid. Wrangler włączył domyślnie `workers_dev` i publiczne Preview URLs (ryzyko z rejestru w `infrastructure.md`) — do rozstrzygnięcia w etapie 6 (`preview_urls`).
 
 ## 6. Automatyczne wdrożenie z GitHub Actions (osobna zmiana)
 
@@ -109,6 +111,6 @@ Rollback dotyczy jednej ze 100 ostatnich wersji. Logi z 3 dni w Workers Logs —
 
 ## Dziennik wdrożeń
 
-| Data | Wersja (ID) | Commit | Wynik smoke | Uwagi |
-| ---- | ----------- | ------ | ----------- | ----- |
-|      |             |        |             |       |
+| 2026-11-12 | `5301db83-921e-42ef-ab07-e305a6f19fa8` | `c4a7d42` | 8/8 PASS | Pierwsze wdrożenie, ręczne `wrangler deploy`; https://tennis-match-companion.marcin-wojcik-swidnik.workers.dev |
+| ---------- | -------------------------------------- | --------- | -------- | -------------------------------------------------------------------------------------------------------------- |
+|            |                                        |           |          |                                                                                                                |
