@@ -53,7 +53,7 @@ Aplikacja Astro 7 w trybie SSR (`output: "server"`) z wyspami React 19, Tailwind
 - ESLint pomija `.claude/` (`globalIgnores` w `eslint.config.js`), bo to zarządzane skille kursu, nie kod projektu.
 - Konfiguracja Supabase, zmienne środowiskowe i wdrożenie: @README.md.
 - Bez `SUPABASE_URL` i `SUPABASE_KEY` build przechodzi, ale `createClient` w `src/lib/supabase.ts` zwraca `null` i logowanie jest wyłączone.
-- CI (`.github/workflows/ci.yml`) uruchamia lint, `astro check`, build i test smoke z lokalnym Supabase. Wersja Supabase CLI w CI musi być równa `supabase` w `package.json`, bo CLI 3.x odrzuca sekcję `[inbucket]` w `supabase/config.toml`.
+- CI (`.github/workflows/ci.yml`) uruchamia lint, `astro check`, build i test smoke z lokalnym Supabase. Wersja Supabase CLI w CI musi być równa `supabase` w `package.json`, bo CLI 3.x odrzuca sekcję `[inbucket]` w `supabase/config.toml`. Po zielonych `ci` i `smoke` na `main` job `deploy` wdraża produkcję, więc każdy push na `main` to wdrożenie; po wdrożeniu uruchamia `SMOKE_MODE=production npm run smoke`, a gdy to nie przejdzie, sam robi `wrangler rollback` do wersji sprzed wdrożenia. Plan i dziennik wdrożeń: `context/deployment/deploy-plan.md`.
 - Zasady dopisuj w `CLAUDE.md`; `AGENTS.md` tylko wskazuje na ten plik.
 
 ## Zestaw 10x-cli

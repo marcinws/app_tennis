@@ -85,21 +85,22 @@ Wynik 2026-11-12 (wersja `5301db83`): 5.1–5.3 zielone, 0 wyjątków i błędó
 
 ## 6. Automatyczne wdrożenie z GitHub Actions (osobna zmiana)
 
-Po udanym etapie 5, przez `/10x-new` → `/10x-plan` → `/10x-implement`:
+Zrealizowane 2026-11-12 w zmianie `context/changes/ci-auto-deploy/` (plan, decyzje i weryfikacja w `plan.md`).
 
-- 6.1 **[Ty]** Cloudflare → My Profile → API Tokens → szablon „Edit Cloudflare Workers”; dodaj do GitHub: `CLOUDFLARE_API_TOKEN` i `CLOUDFLARE_ACCOUNT_ID` (Settings → Secrets → Actions, albo `! gh secret set ...`).
-- 6.2 **[Claude]** Job `deploy` w `ci.yml`: tylko `push` na `main`, `needs: [ci, smoke]`, Node 26, `npm ci`, `npm run build`, `npx wrangler deploy` z tokenem z sekretów; po nim smoke na adresie produkcyjnym. Rozważyć `environment: production` z wymaganą akceptacją (zgoda człowieka na produkcję).
-- 6.3 **[Claude]** Weryfikacja: `gh run watch`, `gh run view <id> --log-failed` przy błędzie.
+- 6.1 **[Ty]** ✅ `CLOUDFLARE_API_TOKEN` (szablon „Edit Cloudflare Workers”) w GitHub secrets; `CLOUDFLARE_ACCOUNT_ID` ustawił Claude.
+- 6.2 **[Claude]** ✅ Job `deploy` w `ci.yml`: po zielonych `ci` i `smoke`, tylko `push` i ręczne uruchomienie na `main`, środowisko `production` bez wymaganego zatwierdzania, `concurrency: production`. Kolejność: build → zapis wersji obsługującej 100% ruchu → `wrangler deploy --message "CI deploy of <sha>"` → czekanie na 200 → `SMOKE_MODE=production npm run smoke` (bez zakładania kont). Akcje na Node 24, `preview_urls: false`.
+- 6.3 **[Claude]** ✅ Przy nieudanym sprawdzeniu job sam robi `wrangler rollback` do zapisanej wersji, ponownie uruchamia smoke i kończy się na czerwono (e-mail z GitHuba). Próba generalna: `gh workflow run ci.yml --ref main -f simulate_check_failure=true`. Przy błędzie: `gh run view <id> --log-failed`.
 
 ## 7. Rollback
 
-| Sytuacja                                                | Działanie                                                                                                             | Kto                               |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| Nowa wersja psuje aplikację (od 2. wdrożenia)           | `npx wrangler versions list` → `npx wrangler rollback <VERSION_ID> --message "<powód>"`, potem smoke                  | [Claude] przygotowuje, [Ty] zgoda |
-| Pierwsze wdrożenie nie działa (brak poprzedniej wersji) | Poprawka i ponowny `wrangler deploy`; w ostateczności wyłączyć trasę `workers.dev` w panelu lub `npx wrangler delete` | [Ty]                              |
-| Błędne sekrety                                          | `wrangler secret put` z poprawną wartością (działa od razu, bez redeployu)                                            | [Ty]                              |
-| Rotacja klucza Supabase                                 | Nowy klucz w Supabase → `wrangler secret put SUPABASE_KEY` → aktualizacja GitHub secret → smoke                       | [Ty] + [Claude]                   |
-| Migracja bazy (w przyszłości)                           | Rollback nie cofa danych; migracje wstecznie zgodne, kopia bazy przed migracją                                        | [Ty] zgoda                        |
+| Sytuacja                                                | Działanie                                                                                                                                                                                 | Kto                               |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Sprawdzenie po wdrożeniu z CI nie przechodzi            | Automatycznie: job `deploy` robi `wrangler rollback` do wersji sprzed wdrożenia i ponownie uruchamia smoke; przebieg czerwony                                                             | CI; [Ty] dostajesz e-mail         |
+| Nowa wersja psuje aplikację, a smoke tego nie wykrył    | `npx wrangler versions list` → `npx wrangler rollback <VERSION_ID> --message "<powód>"`, potem smoke; następny push na `main` znów wdroży kod z `main`, więc najpierw poprawka lub revert | [Claude] przygotowuje, [Ty] zgoda |
+| Pierwsze wdrożenie nie działa (brak poprzedniej wersji) | Poprawka i ponowny `wrangler deploy`; w ostateczności wyłączyć trasę `workers.dev` w panelu lub `npx wrangler delete`                                                                     | [Ty]                              |
+| Błędne sekrety                                          | `wrangler secret put` z poprawną wartością (działa od razu, bez redeployu)                                                                                                                | [Ty]                              |
+| Rotacja klucza Supabase                                 | Nowy klucz w Supabase → `wrangler secret put SUPABASE_KEY` → aktualizacja GitHub secret → smoke                                                                                           | [Ty] + [Claude]                   |
+| Migracja bazy (w przyszłości)                           | Rollback nie cofa danych; migracje wstecznie zgodne, kopia bazy przed migracją                                                                                                            | [Ty] zgoda                        |
 
 Rollback dotyczy jednej ze 100 ostatnich wersji. Logi z 3 dni w Workers Logs — błędy analizować od razu.
 
@@ -109,10 +110,13 @@ Rollback dotyczy jednej ze 100 ostatnich wersji. Logi z 3 dni w Workers Logs —
 
 **Ty:** `wrangler login`, ustawienia projektu Supabase, wartości sekretów, zgoda na `wrangler deploy` i `rollback`, usuwanie kont testowych, test na telefonie, token API Cloudflare w GitHub.
 
+**Od etapu 6:** push na `main` (który Claude robi tylko na Twoją prośbę) jest zgodą na wdrożenie produkcyjne; CI wdraża i w razie potrzeby wycofuje bez dalszego udziału.
+
 ## Dziennik wdrożeń
 
-| 2026-11-12 | `5301db83-921e-42ef-ab07-e305a6f19fa8` | `c4a7d42` | 8/8 PASS | Pierwsze wdrożenie, ręczne `wrangler deploy`; https://tennis-match-companion.marcin-wojcik-swidnik.workers.dev |
-
-| 2026-11-12 | `e120b908-5d47-464d-b05c-5fbfc62f1979` | (ten commit) | 9/9 PASS | Poprawka komunikatu po rejestracji; najpierw podgląd `versions upload --preview-alias fix-confirm`, potem `versions deploy` |
-| ---------- | -------------------------------------- | ------------ | -------- | --------------------------------------------------------------------------------------------------------------------------- |
-|            |                                        |              |          |                                                                                                                             |
+| Data       | Wersja (ID)                                                     | Commit    | Wynik smoke                              | Uwagi                                                                                                                       |
+| ---------- | --------------------------------------------------------------- | --------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-12 | `5301db83-921e-42ef-ab07-e305a6f19fa8`                          | `c4a7d42` | 8/8 PASS                                 | Pierwsze wdrożenie, ręczne `wrangler deploy`; https://tennis-match-companion.marcin-wojcik-swidnik.workers.dev              |
+| 2026-11-12 | `e120b908-5d47-464d-b05c-5fbfc62f1979`                          | `4e8c06d` | 9/9 PASS                                 | Poprawka komunikatu po rejestracji; najpierw podgląd `versions upload --preview-alias fix-confirm`, potem `versions deploy` |
+| 2026-11-12 | `8794ba25-e9cc-4663-a34a-f187ecc3effa`                          | `c0f1c81` | production 4/4 PASS                      | Pierwsze automatyczne wdrożenie z CI (przebieg 43232400493)                                                                 |
+| 2026-11-12 | `f31135e7-237d-46e2-bead-47b08e76b338` → rollback do `8794ba25` | `c0f1c81` | production 4/4 PASS przed i po rollbacku | Próba generalna rollbacku, `simulate_check_failure=true` (przebieg 43234181132, celowo czerwony)                            |

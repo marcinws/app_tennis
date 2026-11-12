@@ -275,12 +275,12 @@ Brak migracji danych. Pierwszy przebieg z jobem `deploy` utworzy GitHub Environm
 
 #### Automated
 
-- [ ] 3.1 Przebieg próbny kończy się `failure` z udanym rollbackiem w logu
-- [ ] 3.2 Aktywna jest wersja sprzed wdrożenia próbnego
-- [ ] 3.3 Produkcyjny smoke przechodzi po próbie
-- [ ] 3.4 `prettier --check` dla `deploy-plan.md` i `CLAUDE.md`
+- [x] 3.1 Przebieg próbny kończy się `failure` z udanym rollbackiem w logu
+- [x] 3.2 Aktywna jest wersja sprzed wdrożenia próbnego
+- [x] 3.3 Produkcyjny smoke przechodzi po próbie
+- [x] 3.4 `prettier --check` dla `deploy-plan.md` i `CLAUDE.md`
 
 #### Manual
 
-- [ ] 3.5 E-mail z GitHuba o nieudanym przebiegu
-- [ ] 3.6 Aplikacja działa na telefonie po próbie rollbacku
+- [x] 3.5 E-mail z GitHuba o nieudanym przebiegu
+- [x] 3.6 Aplikacja działa na telefonie po próbie rollbacku
