@@ -245,23 +245,23 @@ Brak migracji danych. Pierwszy przebieg z jobem `deploy` utworzy GitHub Environm
 
 #### Automated
 
-- [x] 1.1 Tryb produkcyjny nie przechodzi na buildzie bez sekretów
-- [x] 1.2 Tryb produkcyjny przechodzi na produkcji
-- [x] 1.3 Nieznany tryb kończy się błędem
-- [x] 1.4 `wrangler deploy --dry-run` bez ostrzeżeń o `workers_dev` i `preview_urls`
-- [x] 1.5 `npm run lint` i `npx astro check` bez błędów
+- [x] 1.1 Tryb produkcyjny nie przechodzi na buildzie bez sekretów — 27ace91
+- [x] 1.2 Tryb produkcyjny przechodzi na produkcji — 27ace91
+- [x] 1.3 Nieznany tryb kończy się błędem — 27ace91
+- [x] 1.4 `wrangler deploy --dry-run` bez ostrzeżeń o `workers_dev` i `preview_urls` — 27ace91
+- [x] 1.5 `npm run lint` i `npx astro check` bez błędów — 27ace91
 
 #### Manual
 
-- [x] 1.6 Brak nowych kont `smoke-probe-*` w Supabase
+- [x] 1.6 Brak nowych kont `smoke-probe-*` w Supabase — 27ace91
 
 ### Phase 2: Job `deploy` w GitHub Actions
 
 #### Automated
 
-- [ ] 2.1 `CLOUDFLARE_ACCOUNT_ID` w `gh secret list`
+- [x] 2.1 `CLOUDFLARE_ACCOUNT_ID` w `gh secret list`
 - [ ] 2.2 Przebieg CI na `main` zielony we wszystkich trzech jobach
-- [ ] 2.3 Job `deploy` nie uruchamia się dla pull requestów
+- [x] 2.3 Job `deploy` nie uruchamia się dla pull requestów
 - [ ] 2.4 `wrangler deployments list` pokazuje wersję z SHA commita
 - [ ] 2.5 Produkcyjny smoke przechodzi po wdrożeniu z CI
 - [ ] 2.6 Brak adnotacji o Node 20

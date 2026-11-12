@@ -5,13 +5,19 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      simulate_check_failure:
+        description: "Fail the post-deploy check on purpose after a real deploy to exercise the rollback"
+        type: boolean
+        default: false
 
 jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 26
           cache: npm
@@ -27,13 +33,13 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 26
           cache: npm
       # Keep in sync with the supabase devDependency: CLI 3.x rejects the [inbucket] section in supabase/config.toml.
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: 2.122.0
       - run: npm ci
@@ -54,3 +60,69 @@ jobs:
           BASE_URL=http://localhost:4321 npm run smoke
       - if: always()
         run: supabase stop --no-backup
+
+  deploy:
+    needs: [ci, smoke]
+    # Never for pull_request: only pushes to main and manual runs on main deploy.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://tennis-match-companion.marcin-wojcik-swidnik.workers.dev
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PRODUCTION_URL: https://tennis-match-companion.marcin-wojcik-swidnik.workers.dev
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      # No SUPABASE_* here: the deployed Worker reads them from its Cloudflare secrets at runtime.
+      - run: npm run build
+      # Read before deploying: afterwards the version serving 100% of traffic is already the new one.
+      - name: Record the version currently serving production
+        id: previous
+        # Explicit bash enables pipefail, so a failing wrangler call stops the job instead of yielding an empty ID.
+        shell: bash
+        run: |
+          version_id=$(npx wrangler deployments status --json | jq -r '.versions[] | select(.percentage == 100) | .version_id')
+          echo "Version serving 100% of traffic before deploy: ${version_id:-<none>}"
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
+      - name: Deploy to Cloudflare Workers
+        id: deploy
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: npx wrangler deploy --message "CI deploy of $COMMIT_SHA"
+      - name: Wait for production to respond
+        run: |
+          for i in $(seq 1 60); do curl -sf -o /dev/null "$PRODUCTION_URL/" && exit 0; sleep 1; done
+          echo "Production did not return 200 from / within 60 s"
+          exit 1
+      - name: Run smoke test against production
+        env:
+          SIMULATE_CHECK_FAILURE: ${{ inputs.simulate_check_failure }}
+        run: |
+          SMOKE_MODE=production BASE_URL="$PRODUCTION_URL" npm run smoke
+          if [ "$SIMULATE_CHECK_FAILURE" = "true" ]; then
+            echo "simulate_check_failure is set: failing the post-deploy check on purpose"
+            exit 1
+          fi
+      - name: Roll back to the previous version
+        if: failure() && steps.deploy.outcome == 'success' && steps.previous.outputs.version_id != ''
+        env:
+          PREVIOUS_VERSION_ID: ${{ steps.previous.outputs.version_id }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npx wrangler rollback "$PREVIOUS_VERSION_ID" -m "CI: post-deploy check failed for $COMMIT_SHA" -y
+      # The job stays red after a rollback; this only confirms the restored version works.
+      - name: Run smoke test against production after rollback
+        if: failure() && steps.deploy.outcome == 'success' && steps.previous.outputs.version_id != ''
+        run: SMOKE_MODE=production BASE_URL="$PRODUCTION_URL" npm run smoke
