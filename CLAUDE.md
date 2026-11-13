@@ -19,9 +19,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint` / `npm run lint:fix` — ESLint z regułami sprawdzającymi typy
 - `npm run format` — Prettier (z wtyczkami Astro i Tailwind)
 - `npx astro check` — sprawdzenie typów; CI uruchamia je po `npx astro sync`
+- `npm test` — testy jednostkowe Vitest, jednorazowo, pliki `src/**/*.test.ts` (konfiguracja w `vitest.config.ts`)
+- `npm run test:watch` — Vitest w trybie obserwowania zmian
+- Pojedynczy test: `npx vitest run <ścieżka>`, np. `npx vitest run src/lib/services/scoring.test.ts`, albo po nazwie `npx vitest run -t "<nazwa>"`
 - `npm run smoke` — test przepływu logowania (`scripts/smoke.mjs`) na działającym serwerze pod `BASE_URL` (domyślnie `http://localhost:4321`). Uruchamiaj po aktualizacji zależności. Tryb domyślny zakłada konto, więc na produkcji uruchamiaj wyłącznie `SMOKE_MODE=production`, który niczego nie zapisuje.
-
-Nie ma jeszcze runnera testów jednostkowych, więc nie da się uruchomić pojedynczego testu. Dopisz polecenie, gdy powstanie.
 
 Hook pre-commit (husky + lint-staged) uruchamia `eslint --fix` na `*.{ts,tsx,astro}` i `prettier --write` na `*.{json,css,md}`. Husky ustawia `core.hooksPath` w skrypcie `prepare`, więc po świeżym klonie hook działa dopiero po `npm install`.
 
@@ -44,6 +45,7 @@ Aplikacja Astro 7 w trybie SSR (`output: "server"`) z wyspami React 19, Tailwind
 - shadcn/ui: komponenty w `src/components/ui/`, styl "new-york", nowe dodawaj przez `npx shadcn@latest add <nazwa>`.
 - Trasy API eksportują handlery `GET`/`POST` typu `APIRoute`. Nowe trasy walidują wejście przez `z` z `astro/zod` (bez osobnej zależności `zod`), zamiast rzutować dane formularza `as string` jak w `src/pages/api/auth/*`.
 - Reguły liczenia wyniku i inne czyste funkcje domenowe w `src/lib/services/<obszar>.ts`, bez importów z Astro i Supabase, żeby dało się je testować w izolacji. W `src/lib/` tylko infrastruktura (`supabase.ts`, `utils.ts`). Wspólne typy w `src/types.ts`.
+- Testy funkcji domenowych leżą obok kodu jako `src/lib/services/<obszar>.test.ts` i importują `describe`/`it`/`expect` jawnie z `vitest` (bez globali).
 - Migracje Supabase w `supabase/migrations/` z nazwą `YYYYMMDDHHmmss_krotki_opis.sql`.
 
 ### Środowisko
@@ -53,7 +55,7 @@ Aplikacja Astro 7 w trybie SSR (`output: "server"`) z wyspami React 19, Tailwind
 - ESLint pomija `.claude/` (`globalIgnores` w `eslint.config.js`), bo to zarządzane skille kursu, nie kod projektu.
 - Konfiguracja Supabase, zmienne środowiskowe i wdrożenie: @README.md.
 - Bez `SUPABASE_URL` i `SUPABASE_KEY` build przechodzi, ale `createClient` w `src/lib/supabase.ts` zwraca `null` i logowanie jest wyłączone.
-- CI (`.github/workflows/ci.yml`) uruchamia lint, `astro check`, build i test smoke z lokalnym Supabase. Wersja Supabase CLI w CI musi być równa `supabase` w `package.json`, bo CLI 3.x odrzuca sekcję `[inbucket]` w `supabase/config.toml`. Po zielonych `ci` i `smoke` na `main` job `deploy` wdraża produkcję, więc każdy push na `main` to wdrożenie; po wdrożeniu uruchamia `SMOKE_MODE=production npm run smoke`, a gdy to nie przejdzie, sam robi `wrangler rollback` do wersji sprzed wdrożenia. Plan i dziennik wdrożeń: `context/deployment/deploy-plan.md`.
+- CI (`.github/workflows/ci.yml`) uruchamia lint, `astro check`, testy jednostkowe (`npm test`), build i test smoke z lokalnym Supabase. Wersja Supabase CLI w CI musi być równa `supabase` w `package.json`, bo CLI 3.x odrzuca sekcję `[inbucket]` w `supabase/config.toml`. Po zielonych `ci` i `smoke` na `main` job `deploy` wdraża produkcję, więc każdy push na `main` to wdrożenie; po wdrożeniu uruchamia `SMOKE_MODE=production npm run smoke`, a gdy to nie przejdzie, sam robi `wrangler rollback` do wersji sprzed wdrożenia. Plan i dziennik wdrożeń: `context/deployment/deploy-plan.md`.
 - Zasady dopisuj w `CLAUDE.md`; `AGENTS.md` tylko wskazuje na ten plik.
 
 ## Zestaw 10x-cli

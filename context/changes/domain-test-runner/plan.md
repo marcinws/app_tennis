@@ -186,24 +186,24 @@ Nie dotyczy.
 
 #### Automated
 
-- [x] 1.1 Testy przechodzą: `npm test`
-- [x] 1.2 Celowe zepsucie mapowania w `pointLabel` daje kod ≠ 0 z `npm test`; zmiana cofnięta
-- [x] 1.3 Pojedynczy plik uruchamia się: `npx vitest run src/lib/services/scoring.test.ts`
-- [x] 1.4 Lint przechodzi: `npm run lint`
-- [x] 1.5 Typy przechodzą: `npx astro check`
-- [x] 1.6 Build przechodzi: `npm run build`
+- [x] 1.1 Testy przechodzą: `npm test` — 5f0e4b0
+- [x] 1.2 Celowe zepsucie mapowania w `pointLabel` daje kod ≠ 0 z `npm test`; zmiana cofnięta — 5f0e4b0
+- [x] 1.3 Pojedynczy plik uruchamia się: `npx vitest run src/lib/services/scoring.test.ts` — 5f0e4b0
+- [x] 1.4 Lint przechodzi: `npm run lint` — 5f0e4b0
+- [x] 1.5 Typy przechodzą: `npx astro check` — 5f0e4b0
+- [x] 1.6 Build przechodzi: `npm run build` — 5f0e4b0
 
 #### Manual
 
-- [x] 1.7 `npm run test:watch` ponownie uruchamia test po zapisaniu `scoring.ts`
+- [x] 1.7 `npm run test:watch` ponownie uruchamia test po zapisaniu `scoring.ts` — 5f0e4b0
 
 ### Phase 2: CI i dokumentacja
 
 #### Automated
 
-- [ ] 2.1 `npm test` w jobie `ci` przed `npm run build`
-- [ ] 2.2 Formatowanie dokumentacji: `npx prettier --check CLAUDE.md README.md`
-- [ ] 2.3 Lint przechodzi: `npm run lint`
+- [x] 2.1 `npm test` w jobie `ci` przed `npm run build`
+- [x] 2.2 Formatowanie dokumentacji: `npx prettier --check CLAUDE.md README.md`
+- [x] 2.3 Lint przechodzi: `npm run lint`
 
 #### Manual
 
