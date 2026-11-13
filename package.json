@@ -11,6 +11,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "smoke": "node scripts/smoke.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepare": "husky"
   },
   "dependencies": {
@@ -53,6 +55,7 @@
     "supabase": "^2.122.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",
+    "vitest": "^5.1.0",
     "wrangler": "^4.156.0"
   },
   "lint-staged": {
