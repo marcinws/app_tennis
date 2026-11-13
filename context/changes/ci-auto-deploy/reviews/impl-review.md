@@ -22,6 +22,8 @@
 
 Success criteria re-run 2026-11-13: 1.2–1.5, 2.1, 2.2, 2.6, 3.1, 3.4 PASS; latest push run 43236290306 green with deploy `1a5510fb`. 3.2 is historical (active version has since moved on with the next CI deploy); evidence is the rehearsal run 43234181132 and the rollback annotation recorded in `deploy-plan.md`.
 
+Post-triage verification 2026-11-13 (commit `b2302ce`): push run 43424094276 green, deployed `7db825d3` confirmed at 100% before smoke; rehearsal run 43424686749 failed on purpose, rolled back to `7db825d3`, post-rollback smoke passed.
+
 ## Findings
 
 ### F1 — Cloudflare token visible to every step of the deploy job
