@@ -12,6 +12,9 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -74,9 +77,8 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: read
+    # The Cloudflare token is passed only to the wrangler steps, not to npm ci or the build.
     env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       PRODUCTION_URL: https://tennis-match-companion.marcin-wojcik-swidnik.workers.dev
     steps:
       - uses: actions/checkout@v7
@@ -92,17 +94,50 @@ jobs:
         id: previous
         # Explicit bash enables pipefail, so a failing wrangler call stops the job instead of yielding an empty ID.
         shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           version_id=$(npx wrangler deployments status --json | jq -r '.versions[] | select(.percentage == 100) | .version_id')
           echo "Version serving 100% of traffic before deploy: ${version_id:-<none>}"
+          if [ -z "$version_id" ]; then
+            echo "::warning::No version serves 100% of traffic, so a failed post-deploy check will not roll back"
+          fi
           echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
+      # Never fails on a missing version ID: the next step does, so a live but unverified deploy is still rolled back.
       - name: Deploy to Cloudflare Workers
         id: deploy
+        shell: bash
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           COMMIT_SHA: ${{ github.sha }}
-        run: npx wrangler deploy --message "CI deploy of $COMMIT_SHA"
-      - name: Wait for production to respond
         run: |
+          npx wrangler deploy --message "CI deploy of $COMMIT_SHA" | tee deploy.log
+          version_id=$(grep -oE 'Current Version ID: [0-9a-f-]+' deploy.log | awk '{print $4}' || true)
+          echo "Deployed version: ${version_id:-<none>}"
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
+      # The previous version answers the same pages, so smoke must not start before the new one serves 100% of traffic.
+      - name: Wait for the new version to serve production
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NEW_VERSION_ID: ${{ steps.deploy.outputs.version_id }}
+        run: |
+          if [ -z "$NEW_VERSION_ID" ]; then
+            echo "::error::Could not read the deployed version ID from wrangler deploy output"
+            exit 1
+          fi
+          for i in $(seq 1 30); do
+            active=$(npx wrangler deployments status --json | jq -r '.versions[] | select(.percentage == 100) | .version_id')
+            [ "$active" = "$NEW_VERSION_ID" ] && break
+            sleep 2
+          done
+          if [ "$active" != "$NEW_VERSION_ID" ]; then
+            echo "::error::Version $NEW_VERSION_ID is not serving 100% of traffic (active: ${active:-<none>})"
+            exit 1
+          fi
           for i in $(seq 1 60); do curl -sf -o /dev/null "$PRODUCTION_URL/" && exit 0; sleep 1; done
           echo "Production did not return 200 from / within 60 s"
           exit 1
@@ -116,13 +151,16 @@ jobs:
             exit 1
           fi
       - name: Roll back to the previous version
+        id: rollback
         if: failure() && steps.deploy.outcome == 'success' && steps.previous.outputs.version_id != ''
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PREVIOUS_VERSION_ID: ${{ steps.previous.outputs.version_id }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
           npx wrangler rollback "$PREVIOUS_VERSION_ID" -m "CI: post-deploy check failed for $COMMIT_SHA" -y
       # The job stays red after a rollback; this only confirms the restored version works.
       - name: Run smoke test against production after rollback
-        if: failure() && steps.deploy.outcome == 'success' && steps.previous.outputs.version_id != ''
+        if: failure() && steps.rollback.outcome == 'success'
         run: SMOKE_MODE=production BASE_URL="$PRODUCTION_URL" npm run smoke

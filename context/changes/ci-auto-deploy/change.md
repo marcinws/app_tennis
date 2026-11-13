@@ -1,9 +1,9 @@
 ---
 change_id: ci-auto-deploy
 title: Automatyczne wdrażanie na Cloudflare Workers z GitHub Actions
-status: implemented
+status: impl_reviewed
 created: 2026-11-12
-updated: 2026-11-12
+updated: 2026-11-13
 archived_at: null
 ---
 

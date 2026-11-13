@@ -182,10 +182,11 @@ It needs a reachable Supabase instance (local or cloud) with email confirmation 
 
 ## CI
 
-GitHub Actions runs two jobs on every push and PR to `main`:
+GitHub Actions runs two jobs on every push and PR to `main`, and a third on pushes to `main`:
 
 - **ci** — lint, `astro check` and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
 - **smoke** — starts a local Supabase via the Supabase CLI, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. No secrets required.
+- **deploy** — after green `ci` and `smoke` on `main` only: deploys with `wrangler deploy`, waits until the new version serves all traffic, runs `SMOKE_MODE=production npm run smoke` and rolls back to the pre-deploy version if that fails. Needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets. A manual run with `simulate_check_failure` rehearses the rollback.
 
 ## License
 
