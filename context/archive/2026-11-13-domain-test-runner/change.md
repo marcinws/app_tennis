@@ -1,9 +1,10 @@
 ---
 change_id: domain-test-runner
 title: Testy jednostkowe reguł domenowych w CI
-status: impl_reviewed
+status: archived
 created: 2026-11-13
 updated: 2026-11-16
+archived_at: 2026-11-16T13:02:58Z
 ---
 
 ## Notes
