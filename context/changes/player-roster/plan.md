@@ -264,11 +264,11 @@ Migracja addytywna (nowa tabela), bez danych do przeniesienia. Kolejność: `db 
 
 #### Automated
 
-- [ ] 1.1 Testy przechodzą: `npm test`
-- [ ] 1.2 Celowe zepsucie limitu w `parsePlayerName` daje czerwony test; zmiana cofnięta
-- [ ] 1.3 Migracja zawiera RLS i trzy polityki
-- [ ] 1.4 Lint przechodzi: `npm run lint`
-- [ ] 1.5 Typy przechodzą: `npx astro check`
+- [x] 1.1 Testy przechodzą: `npm test` — 6e65349
+- [x] 1.2 Celowe zepsucie limitu w `parsePlayerName` daje czerwony test; zmiana cofnięta — 6e65349
+- [x] 1.3 Migracja zawiera RLS i trzy polityki — 6e65349
+- [x] 1.4 Lint przechodzi: `npm run lint` — 6e65349
+- [x] 1.5 Typy przechodzą: `npx astro check` — 6e65349
 
 ### Phase 2: Strona /players i trasy API
 
