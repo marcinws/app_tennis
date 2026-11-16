@@ -201,10 +201,10 @@ Nie dotyczy.
 
 #### Automated
 
-- [x] 2.1 `npm test` w jobie `ci` przed `npm run build`
-- [x] 2.2 Formatowanie dokumentacji: `npx prettier --check CLAUDE.md README.md`
-- [x] 2.3 Lint przechodzi: `npm run lint`
+- [x] 2.1 `npm test` w jobie `ci` przed `npm run build` — 5176563
+- [x] 2.2 Formatowanie dokumentacji: `npx prettier --check CLAUDE.md README.md` — 5176563
+- [x] 2.3 Lint przechodzi: `npm run lint` — 5176563
 
 #### Manual
 
-- [ ] 2.4 Po pushu na `main` krok `npm test` zielony w jobie `ci`, a `deploy` kończy się sukcesem
+- [x] 2.4 Po pushu na `main` krok `npm test` zielony w jobie `ci`, a `deploy` kończy się sukcesem — 5176563
