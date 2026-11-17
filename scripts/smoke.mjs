@@ -114,6 +114,20 @@ const fullSteps = [
   ],
   ["players of first account are hidden from second", () => request("/players"), { status: 200, absent: PLAYER_NAME }],
   ["second account cannot rename first account's player", renameCapturedPlayer, { status: 404 }],
+  // Back as account A: the 404 above must mean RLS blocked the update, not that the route broke.
+  [
+    "signin accepts first account again",
+    () => {
+      jar.clear();
+      return request("/api/auth/signin", { method: "POST", form: { email, password } });
+    },
+    { status: 302, location: "/" },
+  ],
+  [
+    "first account's player keeps its name",
+    () => request("/players"),
+    { status: 200, text: PLAYER_NAME, absent: "Smoke Hijacked" },
+  ],
 ];
 
 // Read-only checks: a sign-in attempt for an account that does not exist proves the Worker reaches Supabase.
