@@ -1,7 +1,8 @@
 ---
 change_id: match-start
 title: "Start meczu: zawodnik, turniej, format, pierwszy serwujący"
-status: impl_reviewed
+status: archived
+archived_at: 2026-11-17T13:12:10Z
 created: 2026-11-17
 updated: 2026-11-17
 ---
