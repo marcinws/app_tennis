@@ -317,13 +317,13 @@ Migracja addytywna: nowa tabela i ograniczenie unikalności `(id, owner_id)` na 
 
 #### Automated
 
-- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
-- [x] 3.2 Lint przechodzi: `npm run lint`
-- [ ] 3.3 CI dla PR zielone (`ci` i `smoke`, w tym kroki meczu i konta B)
+- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs` — 670f0bd
+- [x] 3.2 Lint przechodzi: `npm run lint` — 670f0bd
+- [x] 3.3 CI dla PR zielone (`ci` i `smoke`, w tym kroki meczu i konta B) — 670f0bd
 
 #### Manual
 
-- [ ] 3.4 Migracja na produkcji: `db push` i `migration list --linked`
-- [ ] 3.5 Ustawienia produkcji według lekcji: RLS, polityki i uprawnienia `matches`, Data API
-- [ ] 3.6 Po merge na `main` job `deploy` zielony
-- [ ] 3.7 Na telefonie: start meczu z turniejem i bez, strona meczu, odnośnik do ostatniego meczu
+- [x] 3.4 Migracja na produkcji: `db push` i `migration list --linked` — 670f0bd
+- [x] 3.5 Ustawienia produkcji według lekcji: RLS, polityki i uprawnienia `matches`, Data API — 670f0bd
+- [x] 3.6 Po merge na `main` job `deploy` zielony — 190c9d8
+- [x] 3.7 Na telefonie: start meczu z turniejem i bez, strona meczu, odnośnik do ostatniego meczu — 190c9d8
