@@ -1,0 +1,97 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Topbar from "@/components/Topbar.astro";
+import { createClient } from "@/lib/supabase";
+import { PLAYER_NAME_MAX_LENGTH } from "@/lib/services/players";
+import type { Player } from "@/types";
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+if (!supabase) {
+  return new Response("Supabase nie jest skonfigurowany", { status: 500 });
+}
+
+const { data, error: queryError } = await supabase
+  .from("players")
+  .select("id, name, created_at")
+  .order("name", { ascending: true })
+  .overrideTypes<Player[], { merge: false }>();
+if (queryError) {
+  // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
+  console.error("Failed to load players", queryError);
+  return new Response("Nie udało się wczytać zawodników", { status: 500 });
+}
+const players = data;
+
+const errorMessage = Astro.url.searchParams.get("error");
+---
+
+<Layout title="Zawodnicy">
+  <div class="bg-cosmic min-h-screen p-4">
+    <div class="mx-auto max-w-xl">
+      <Topbar />
+      <div class="rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl">
+        <h1 class="mb-6 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-3xl font-bold text-transparent">
+          Zawodnicy
+        </h1>
+
+        {errorMessage && (
+          <p role="alert" class="mb-4 rounded-lg border border-red-400/40 bg-red-500/20 px-3 py-2 text-sm text-red-100">
+            {errorMessage}
+          </p>
+        )}
+
+        <form method="POST" action="/api/players" class="mb-6 flex gap-2">
+          <label for="new-player-name" class="sr-only">
+            Imię nowego zawodnika
+          </label>
+          <input
+            id="new-player-name"
+            type="text"
+            name="name"
+            required
+            maxlength={PLAYER_NAME_MAX_LENGTH}
+            placeholder="Imię zawodnika"
+            class="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-blue-100/40 focus:border-purple-300 focus:outline-none"
+          />
+          <button
+            type="submit"
+            class="shrink-0 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm text-white transition-colors hover:bg-white/20"
+          >
+            Dodaj
+          </button>
+        </form>
+
+        {players.length === 0 ? (
+          <p class="text-blue-100/70">Nie masz jeszcze zawodników. Dodaj pierwszego, żeby zacząć zapisywać mecze.</p>
+        ) : (
+          <ul class="space-y-2">
+            {players.map((player) => (
+              <li>
+                <form method="POST" action={`/api/players/${player.id}`} class="flex gap-2">
+                  <label for={`player-name-${player.id}`} class="sr-only">
+                    Imię zawodnika
+                  </label>
+                  <input
+                    id={`player-name-${player.id}`}
+                    type="text"
+                    name="name"
+                    required
+                    maxlength={PLAYER_NAME_MAX_LENGTH}
+                    value={player.name}
+                    class="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-blue-100/40 focus:border-purple-300 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    class="shrink-0 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm text-white transition-colors hover:bg-white/20"
+                  >
+                    Zapisz
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  </div>
+</Layout>
