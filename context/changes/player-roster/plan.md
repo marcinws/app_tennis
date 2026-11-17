@@ -274,11 +274,11 @@ Migracja addytywna (nowa tabela), bez danych do przeniesienia. Kolejność: `db 
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Typy przechodzą: `npx astro check`
-- [ ] 2.4 Build przechodzi: `npm run build`
-- [ ] 2.5 Trasy są chronione: `grep -n "/players" src/middleware.ts`
+- [x] 2.1 Testy przechodzą: `npm test` — 074e348
+- [x] 2.2 Lint przechodzi: `npm run lint` — 074e348
+- [x] 2.3 Typy przechodzą: `npx astro check` — 074e348
+- [x] 2.4 Build przechodzi: `npm run build` — 074e348
+- [x] 2.5 Trasy są chronione: `grep -n "/players" src/middleware.ts` — 074e348
 
 ### Phase 3: Izolacja w smoke, PR i wdrożenie
 

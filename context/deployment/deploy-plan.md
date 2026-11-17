@@ -49,7 +49,9 @@ Poza zakresem pierwszego wdrożenia (ryzyko z rejestru, osobna zmiana): zmiana `
 - 3.2 **[Ty]** Authentication → Sign In / Providers → Email: **Confirm email = off** (MVP, wymagane przez smoke).
 - 3.3 **[Ty]** ✅ Authentication → URL Configuration: po kroku 4 ustaw **Site URL** na `https://tennis-match-companion.<subdomena>.workers.dev` i dodaj go do Redirect URLs.
 - 3.4 **[Ty]** Przekaż mi wartości tylko przez terminal przy `wrangler secret put` (krok 4.2) — nie wklejaj klucza do czatu. `SUPABASE_KEY` to klucz `anon`/publishable, nie `service_role`.
-- 3.5 Migracje: brak. Gdy powstaną, będą wdrażane przed kodem i pisane wstecznie zgodnie (patrz Rollback).
+- 3.5 Migracje (`supabase/migrations/`) trafiają na produkcję ręcznie, przed kodem, który ich wymaga. CI ich nie wdraża: job `smoke` stosuje je tylko do lokalnego Supabase. Migracje są addytywne i wstecznie zgodne, żeby działająca wersja Workera nadal działała na nowym schemacie (patrz Rollback).
+  - Jednorazowo **[Ty]**: `! npx supabase login` (otwiera przeglądarkę) i `! npx supabase link --project-ref <ref>` (`<ref>` z adresu projektu w panelu Supabase).
+  - Przy każdej migracji: zmiana z migracją idzie przez gałąź i PR. Po zielonym CI na PR, a przed merge na `main`, **[Ty]** `! npx supabase db push`. **[Claude]** `npx supabase migration list` — migracja widoczna po stronie Remote; dopiero wtedy merge na `main` (który wdraża kod).
 
 ## 4. Pierwsze wdrożenie (ręczne)
 
@@ -93,14 +95,14 @@ Zrealizowane 2026-11-12 w zmianie `context/changes/ci-auto-deploy/` (plan, decyz
 
 ## 7. Rollback
 
-| Sytuacja                                                | Działanie                                                                                                                                                                                 | Kto                               |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| Sprawdzenie po wdrożeniu z CI nie przechodzi            | Automatycznie: job `deploy` robi `wrangler rollback` do wersji sprzed wdrożenia i ponownie uruchamia smoke; przebieg czerwony                                                             | CI; [Ty] dostajesz e-mail         |
-| Nowa wersja psuje aplikację, a smoke tego nie wykrył    | `npx wrangler versions list` → `npx wrangler rollback <VERSION_ID> --message "<powód>"`, potem smoke; następny push na `main` znów wdroży kod z `main`, więc najpierw poprawka lub revert | [Claude] przygotowuje, [Ty] zgoda |
-| Pierwsze wdrożenie nie działa (brak poprzedniej wersji) | Poprawka i ponowny `wrangler deploy`; w ostateczności wyłączyć trasę `workers.dev` w panelu lub `npx wrangler delete`                                                                     | [Ty]                              |
-| Błędne sekrety                                          | `wrangler secret put` z poprawną wartością (działa od razu, bez redeployu)                                                                                                                | [Ty]                              |
-| Rotacja klucza Supabase                                 | Nowy klucz w Supabase → `wrangler secret put SUPABASE_KEY` → aktualizacja GitHub secret → smoke                                                                                           | [Ty] + [Claude]                   |
-| Migracja bazy (w przyszłości)                           | Rollback nie cofa danych; migracje wstecznie zgodne, kopia bazy przed migracją                                                                                                            | [Ty] zgoda                        |
+| Sytuacja                                                | Działanie                                                                                                                                                                                                     | Kto                               |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Sprawdzenie po wdrożeniu z CI nie przechodzi            | Automatycznie: job `deploy` robi `wrangler rollback` do wersji sprzed wdrożenia i ponownie uruchamia smoke; przebieg czerwony                                                                                 | CI; [Ty] dostajesz e-mail         |
+| Nowa wersja psuje aplikację, a smoke tego nie wykrył    | `npx wrangler versions list` → `npx wrangler rollback <VERSION_ID> --message "<powód>"`, potem smoke; następny push na `main` znów wdroży kod z `main`, więc najpierw poprawka lub revert                     | [Claude] przygotowuje, [Ty] zgoda |
+| Pierwsze wdrożenie nie działa (brak poprzedniej wersji) | Poprawka i ponowny `wrangler deploy`; w ostateczności wyłączyć trasę `workers.dev` w panelu lub `npx wrangler delete`                                                                                         | [Ty]                              |
+| Błędne sekrety                                          | `wrangler secret put` z poprawną wartością (działa od razu, bez redeployu)                                                                                                                                    | [Ty]                              |
+| Rotacja klucza Supabase                                 | Nowy klucz w Supabase → `wrangler secret put SUPABASE_KEY` → aktualizacja GitHub secret → smoke                                                                                                               | [Ty] + [Claude]                   |
+| Migracja bazy                                           | `wrangler rollback` cofa tylko Workera, nie migrację; migracje są addytywne, więc poprzednia wersja działa na nowym schemacie. Cofnięcie schematu = nowa migracja przez gałąź i PR; kopia bazy przed migracją | [Ty] zgoda                        |
 
 Rollback dotyczy jednej ze 100 ostatnich wersji. Logi z 3 dni w Workers Logs — błędy analizować od razu.
 
