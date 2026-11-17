@@ -292,5 +292,5 @@ Migracja addytywna (nowa tabela), bez danych do przeniesienia. Kolejność: `db 
 #### Manual
 
 - [x] 3.5 Migracja na produkcji: `db push`, tabela `players` z RLS i trzema politykami w panelu — 76d009b
-- [ ] 3.6 Po merge na `main` job `deploy` zielony
-- [ ] 3.7 Na telefonie: dodanie, zmiana imienia, odrzucony duplikat
+- [x] 3.6 Po merge na `main` job `deploy` zielony — b0ffd4e
+- [x] 3.7 Na telefonie: dodanie, zmiana imienia, odrzucony duplikat — b0ffd4e
