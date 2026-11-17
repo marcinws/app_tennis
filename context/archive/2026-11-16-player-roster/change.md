@@ -1,9 +1,10 @@
 ---
 change_id: player-roster
 title: Lista zawodników widoczna tylko dla właściciela
-status: impl_reviewed
+status: archived
 created: 2026-11-16
 updated: 2026-11-17
+archived_at: 2026-11-17T11:29:06Z
 ---
 
 ## Notes
