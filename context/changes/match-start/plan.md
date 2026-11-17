@@ -296,22 +296,22 @@ Migracja addytywna: nowa tabela i ograniczenie unikalności `(id, owner_id)` na 
 
 #### Automated
 
-- [x] 1.1 Testy przechodzą: `npm test`
-- [x] 1.2 Celowe zepsucie limitu w `parseTournamentName` daje czerwony test; zmiana cofnięta
-- [x] 1.3 Migracja zawiera RLS, dwie polityki i odebrane uprawnienia
-- [x] 1.4 Identyfikatory formatów zgodne z bazą
-- [x] 1.5 Lint przechodzi: `npm run lint`
-- [x] 1.6 Typy przechodzą: `npx astro check`
+- [x] 1.1 Testy przechodzą: `npm test` — 37dcd52
+- [x] 1.2 Celowe zepsucie limitu w `parseTournamentName` daje czerwony test; zmiana cofnięta — 37dcd52
+- [x] 1.3 Migracja zawiera RLS, dwie polityki i odebrane uprawnienia — 37dcd52
+- [x] 1.4 Identyfikatory formatów zgodne z bazą — 37dcd52
+- [x] 1.5 Lint przechodzi: `npm run lint` — 37dcd52
+- [x] 1.6 Typy przechodzą: `npx astro check` — 37dcd52
 
 ### Phase 2: Start meczu i strona meczu
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Typy przechodzą: `npx astro check`
-- [ ] 2.4 Build przechodzi: `npm run build`
-- [ ] 2.5 Trasy są chronione: `grep -n "/matches" src/middleware.ts`
+- [x] 2.1 Testy przechodzą: `npm test`
+- [x] 2.2 Lint przechodzi: `npm run lint`
+- [x] 2.3 Typy przechodzą: `npx astro check`
+- [x] 2.4 Build przechodzi: `npm run build`
+- [x] 2.5 Trasy są chronione: `grep -n "/matches" src/middleware.ts`
 
 ### Phase 3: Smoke, ustawienia produkcji i wdrożenie
 
