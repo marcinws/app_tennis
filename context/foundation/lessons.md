@@ -8,3 +8,10 @@
 - **Problem**: Po wdrożeniu pierwszej tabeli `/players` zwracało 500 (`PGRST002`), bo w produkcyjnym projekcie Supabase Data API nie udostępniało schematu `public` (log PostgREST: `pg_pgrst_no_exposed_schemas`). Smoke w CI tego nie wykrył, bo lokalny Supabase bierze ustawienia z `supabase/config.toml`, a produkcja z panelu.
 - **Rule**: Przed pierwszym wdrożeniem wycinka, który dodaje tabelę lub korzysta z nowej usługi Supabase, sprawdź ustawienia produkcyjnego projektu, których nie ma w repo (Data API → Exposed schemas, Auth, Storage), i porównaj je z `supabase/config.toml`. Przy błędach PostgREST najpierw czytaj Logs → PostgREST w panelu.
 - **Applies to**: /10x-plan i /10x-implement dla wycinków z migracją (S-02 i kolejne); deploy-plan.md sekcja 3
+
+## Uprawnienia tylko na kolumny z formularza
+
+- **Context**: supabase/migrations/20261117140000_create_matches.sql:37-38; przegląd S-02 match-start (F1, F4), 2026-11-17
+- **Problem**: `authenticated` miało `insert`/`update` na całe tabele `players` i `matches`, więc właściciel mógł przez PostgREST wstawić wiersz z własnym `id` i `created_at` (np. zmienić „ostatni mecz”). RLS ogranicza wiersze, nie kolumny. Polityki z gołym `auth.uid()` liczą funkcję dla każdego wiersza.
+- **Rule**: Przy każdej nowej tabeli i każdym nowym uprawnieniu `insert`/`update` nadawaj je na kolumny, które faktycznie wysyła trasa (`grant insert (kol1, kol2) …`), a `id`, `owner_id`, `created_at` zostaw domyślnym wartościom. W politykach RLS pisz `(select auth.uid())`, nie `auth.uid()`.
+- **Applies to**: /10x-plan, /10x-implement i /10x-impl-review dla wycinków z migracją (S-03 i kolejne, szczególnie przy dodaniu `update` na `matches`)

@@ -3,8 +3,9 @@ import { z } from "astro/zod";
 import { createClient } from "@/lib/supabase";
 import { type MatchErrorCode, parseMatchStart } from "@/lib/services/matches";
 
-// The player is missing or belongs to another account (composite FK on matches).
 const FOREIGN_KEY_VIOLATION = "23503";
+// The player is missing or belongs to another account (composite FK on matches).
+const PLAYER_FOREIGN_KEY = "matches_player_id_owner_id_fkey";
 
 const matchFormSchema = z.object({
   player_id: z.uuid(),
@@ -50,7 +51,8 @@ export const POST: APIRoute = async (context) => {
     .select("id")
     .single();
   if (error) {
-    if (error.code === FOREIGN_KEY_VIOLATION) {
+    // Only the composite FK means "not your player"; any other FK failure is a real error.
+    if (error.code === FOREIGN_KEY_VIOLATION && error.message.includes(PLAYER_FOREIGN_KEY)) {
       return redirectWithError("player_not_found");
     }
     // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible

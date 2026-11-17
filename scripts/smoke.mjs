@@ -143,7 +143,7 @@ const fullSteps = [
   [
     "unknown match format is rejected",
     () => startMatchForCapturedPlayer({ format: "custom" }),
-    { status: 302, location: "/matches/new?error=" },
+    { status: 302, location: "/matches/new?error=format_invalid" },
   ],
   ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, location: "/" }],
   ["dashboard redirects after signout", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
@@ -167,7 +167,7 @@ const fullSteps = [
   [
     "second account cannot start a match for first account's player",
     () => startMatchForCapturedPlayer({ tournament_name: TOURNAMENT_NAME }),
-    { status: 302, location: "/matches/new?error=" },
+    { status: 302, location: "/matches/new?error=player_not_found" },
   ],
   ["second account has no last match", () => request("/matches/new"), { status: 200, absent: TOURNAMENT_NAME }],
   // Back as account A: the 404 above must mean RLS blocked the update, not that the route broke.
