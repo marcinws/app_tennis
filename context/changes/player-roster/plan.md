@@ -284,13 +284,13 @@ Migracja addytywna (nowa tabela), bez danych do przeniesienia. Kolejność: `db 
 
 #### Automated
 
-- [ ] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
-- [ ] 3.2 Lint przechodzi: `npm run lint`
-- [ ] 3.3 Formatowanie dokumentacji: `npx prettier --check CLAUDE.md context/deployment/deploy-plan.md`
-- [ ] 3.4 CI dla PR zielone (`ci` i `smoke`, w tym kroki zawodników i konta B)
+- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs` — 76d009b
+- [x] 3.2 Lint przechodzi: `npm run lint` — 76d009b
+- [x] 3.3 Formatowanie dokumentacji: `npx prettier --check CLAUDE.md context/deployment/deploy-plan.md` — 76d009b
+- [x] 3.4 CI dla PR zielone (`ci` i `smoke`, w tym kroki zawodników i konta B) — 76d009b
 
 #### Manual
 
-- [ ] 3.5 Migracja na produkcji: `db push`, tabela `players` z RLS i trzema politykami w panelu
+- [x] 3.5 Migracja na produkcji: `db push`, tabela `players` z RLS i trzema politykami w panelu — 76d009b
 - [ ] 3.6 Po merge na `main` job `deploy` zielony
 - [ ] 3.7 Na telefonie: dodanie, zmiana imienia, odrzucony duplikat
