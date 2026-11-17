@@ -2,7 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 import Topbar from "@/components/Topbar.astro";
 import { createClient } from "@/lib/supabase";
-import { PLAYER_NAME_MAX_LENGTH } from "@/lib/services/players";
+import { PLAYER_NAME_MAX_LENGTH, playerErrorMessage } from "@/lib/services/players";
 import type { Player } from "@/types";
 
 const supabase = createClient(Astro.request.headers, Astro.cookies);
@@ -22,7 +22,7 @@ if (queryError) {
 }
 const players = data;
 
-const errorMessage = Astro.url.searchParams.get("error");
+const errorMessage = playerErrorMessage(Astro.url.searchParams.get("error"));
 ---
 
 <Layout title="Zawodnicy">

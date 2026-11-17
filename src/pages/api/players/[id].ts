@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { z } from "astro/zod";
 import { createClient } from "@/lib/supabase";
-import { parsePlayerName } from "@/lib/services/players";
+import { type PlayerErrorCode, parsePlayerName } from "@/lib/services/players";
 
 const UNIQUE_VIOLATION = "23505";
 
@@ -13,7 +13,7 @@ function notFound() {
 }
 
 export const POST: APIRoute = async (context) => {
-  const redirectWithError = (message: string) => context.redirect(`/players?error=${encodeURIComponent(message)}`);
+  const redirectWithError = (code: PlayerErrorCode) => context.redirect(`/players?error=${code}`);
   const parsedId = playerIdSchema.safeParse(context.params.id);
   if (!parsedId.success) {
     return notFound();
@@ -22,7 +22,7 @@ export const POST: APIRoute = async (context) => {
   const form = await context.request.formData();
   const parsedForm = playerFormSchema.safeParse({ name: form.get("name") });
   if (!parsedForm.success) {
-    return redirectWithError("Podaj imię zawodnika");
+    return redirectWithError("name_empty");
   }
   const parsedName = parsePlayerName(parsedForm.data.name);
   if (!parsedName.ok) {
@@ -31,7 +31,7 @@ export const POST: APIRoute = async (context) => {
 
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return redirectWithError("Supabase nie jest skonfigurowany");
+    return redirectWithError("not_configured");
   }
 
   // Under RLS a foreign or missing id is not an error, just zero updated rows.
@@ -42,7 +42,7 @@ export const POST: APIRoute = async (context) => {
     .select("id");
   if (error) {
     if (error.code === UNIQUE_VIOLATION) {
-      return redirectWithError("Taki zawodnik już istnieje");
+      return redirectWithError("duplicate");
     }
     // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
     console.error("Failed to rename player", error);
