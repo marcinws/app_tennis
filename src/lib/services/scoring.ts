@@ -184,15 +184,18 @@ export function parseMatchActions(raw: unknown): { ok: true; actions: MatchActio
   return { ok: true, actions };
 }
 
+function sameAction(a: MatchAction, b: MatchAction): boolean {
+  if (a.type === "point") {
+    return b.type === "point" && b.winner === a.winner;
+  }
+  return b.type === a.type;
+}
+
 export function sameActions(a: readonly MatchAction[], b: readonly MatchAction[]): boolean {
-  return (
-    a.length === b.length &&
-    a.every((action, index) => {
-      const otherAction = b[index];
-      if (action.type === "point") {
-        return otherAction.type === "point" && otherAction.winner === action.winner;
-      }
-      return otherAction.type === action.type;
-    })
-  );
+  return a.length === b.length && a.every((action, index) => sameAction(action, b[index]));
+}
+
+// True when `sent` starts with all of `stored`, so saving `sent` drops no stored action.
+export function extendsActions(stored: readonly MatchAction[], sent: readonly MatchAction[]): boolean {
+  return stored.length <= sent.length && stored.every((action, index) => sameAction(action, sent[index]));
 }

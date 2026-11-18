@@ -46,7 +46,7 @@ export function parseTournamentName(raw: string): ParseTournamentNameResult {
   return { ok: true, name };
 }
 
-function isMatchFormatId(value: string): value is MatchFormatId {
+export function isMatchFormatId(value: string): value is MatchFormatId {
   return MATCH_FORMATS.some((format) => format.id === value);
 }
 

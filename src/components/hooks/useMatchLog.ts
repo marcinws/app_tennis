@@ -10,13 +10,15 @@ import {
   type StoredMatchLog,
   type SyncResponse,
 } from "@/lib/services/match-sync";
-import { type MatchAction, sameActions } from "@/lib/services/scoring";
+import { MAX_MATCH_ACTIONS, type MatchAction, sameActions } from "@/lib/services/scoring";
 
 export type MatchLogStatusKind = "saved" | "waiting" | "error" | "unauthorized" | "rejected" | "conflict";
 
 export interface MatchLogStatus {
   kind: MatchLogStatusKind;
   detail?: string;
+  // A problem with the copy on the phone, not a failed server save, so nothing is retried for it.
+  local?: true;
 }
 
 export interface MatchLogSnapshot {
@@ -24,9 +26,13 @@ export interface MatchLogSnapshot {
   ready: boolean;
   actions: MatchAction[];
   status: MatchLogStatus;
+  // Set while a conflict waits for the user's choice.
+  conflict: { serverCount: number } | null;
 }
 
 const STORAGE_FAILED_DETAIL = "nie można zapisać na telefonie";
+const CORRUPT_COPY_DETAIL = "kopia na telefonie była uszkodzona";
+const SYNC_TIMEOUT_MS = 10_000;
 
 // Sync engine outside React state, so storage writes stay synchronous and ordered before rendering.
 function createMatchLogStore(matchId: string, server: ServerMatchLog) {
@@ -38,6 +44,8 @@ function createMatchLogStore(matchId: string, server: ServerMatchLog) {
   let ready = false;
   let syncStatus: MatchLogStatus = { kind: "saved" };
   let storageFailed = false;
+  // Set when the phone's copy was corrupt at start; cleared by the next successful save.
+  let corruptCopy = false;
   let conflictServer: ServerMatchLog | null = null;
   // Set by unauthorized, rejected and conflict; cleared by the next action or a reload.
   let stopped = false;
@@ -48,15 +56,19 @@ function createMatchLogStore(matchId: string, server: ServerMatchLog) {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let removeListeners: (() => void) | null = null;
 
-  const serverSnapshot: MatchLogSnapshot = { ready: false, actions: log.actions, status: syncStatus };
+  const serverSnapshot: MatchLogSnapshot = { ready: false, actions: log.actions, status: syncStatus, conflict: null };
   let snapshot: MatchLogSnapshot = serverSnapshot;
 
   function emit() {
-    const status =
-      storageFailed && (syncStatus.kind === "saved" || syncStatus.kind === "waiting")
-        ? { kind: "error" as const, detail: STORAGE_FAILED_DETAIL }
-        : syncStatus;
-    snapshot = { ready, actions: log.actions, status };
+    const quiet = syncStatus.kind === "saved" || syncStatus.kind === "waiting";
+    let status = syncStatus;
+    if (quiet && storageFailed) {
+      status = { kind: "error", detail: STORAGE_FAILED_DETAIL, local: true };
+    } else if (quiet && corruptCopy) {
+      status = { kind: "error", detail: CORRUPT_COPY_DETAIL, local: true };
+    }
+    const conflict = conflictServer === null ? null : { serverCount: conflictServer.actions.length };
+    snapshot = { ready, actions: log.actions, status, conflict };
     for (const listener of listeners) {
       listener();
     }
@@ -71,6 +83,18 @@ function createMatchLogStore(matchId: string, server: ServerMatchLog) {
       // eslint-disable-next-line no-console -- no error tracker yet; the status line also shows the failure
       console.error("Failed to save match log on the device", error);
       storageFailed = true;
+    }
+    log = next;
+  }
+
+  // Once the server has the whole log it is the source of truth, so the phone's copy goes.
+  function dropLocalCopy(next: StoredMatchLog) {
+    try {
+      localStorage.removeItem(key);
+      storageFailed = false;
+    } catch (error) {
+      // eslint-disable-next-line no-console -- no error tracker yet; a leftover synced copy is harmless
+      console.error("Failed to remove the synced match log from the device", error);
     }
     log = next;
   }
@@ -90,6 +114,8 @@ function createMatchLogStore(matchId: string, server: ServerMatchLog) {
         // An expired session redirects to sign-in; following it would read as a successful save.
         redirect: "manual",
         headers: { "Content-Type": "application/json" },
+        // A hanging request would block the queue; a timeout rejects and is retried as a network error.
+        signal: AbortSignal.timeout(SYNC_TIMEOUT_MS),
         body: JSON.stringify({ base_revision: sent.baseRevision, events: sent.actions }),
       });
     } catch (error) {
@@ -130,8 +156,13 @@ function createMatchLogStore(matchId: string, server: ServerMatchLog) {
         attempt = 0;
         // Actions recorded while the request was in flight still need a save.
         const unchanged = sameActions(log.actions, sent.actions);
-        persist({ ...log, baseRevision: outcome.revision, pending: !unchanged });
-        syncStatus = { kind: "saved" };
+        if (unchanged) {
+          dropLocalCopy({ ...log, baseRevision: outcome.revision, pending: false });
+        } else {
+          persist({ ...log, baseRevision: outcome.revision, pending: true });
+        }
+        corruptCopy = false;
+        syncStatus = unchanged ? { kind: "saved" } : { kind: "waiting" };
         emit();
         if (!unchanged) {
           void sync();
@@ -185,9 +216,8 @@ function createMatchLogStore(matchId: string, server: ServerMatchLog) {
     // A new action is the user's retry after unauthorized or rejected.
     stopped = false;
     attempt = 0;
-    if (syncStatus.kind !== "saved" && syncStatus.kind !== "waiting" && syncStatus.kind !== "error") {
-      syncStatus = { kind: "waiting" };
-    }
+    // "Zapisano" means the server has the log, which a new action makes untrue.
+    syncStatus = { kind: "waiting" };
     emit();
     void sync();
   }
@@ -220,6 +250,7 @@ function createMatchLogStore(matchId: string, server: ServerMatchLog) {
       } else {
         // eslint-disable-next-line no-console -- no error tracker yet; the raw copy is kept for inspection
         console.error("Corrupt match log on the device, starting from the server copy", { matchId });
+        corruptCopy = true;
         try {
           localStorage.setItem(`${key}:corrupt`, raw ?? "");
         } catch (error) {
@@ -250,11 +281,15 @@ function createMatchLogStore(matchId: string, server: ServerMatchLog) {
     },
 
     record(action: MatchAction) {
+      // During a conflict the user must choose a version first; past the limit the server rejects the log.
+      if (conflictServer !== null || log.actions.length >= MAX_MATCH_ACTIONS) {
+        return;
+      }
       changeActions([...log.actions, action]);
     },
 
     undo() {
-      if (log.actions.length === 0) {
+      if (conflictServer !== null || log.actions.length === 0) {
         return;
       }
       changeActions(log.actions.slice(0, -1));
@@ -263,6 +298,13 @@ function createMatchLogStore(matchId: string, server: ServerMatchLog) {
     keepServer() {
       if (conflictServer === null) {
         return;
+      }
+      // Keeps the discarded points as evidence, like the :corrupt copy.
+      try {
+        localStorage.setItem(`${key}:discarded`, serializeStoredLog(log));
+      } catch (error) {
+        // eslint-disable-next-line no-console -- no error tracker yet; the user already chose the server version
+        console.error("Failed to keep the discarded match log", error);
       }
       persist({ version: 1, actions: conflictServer.actions, baseRevision: conflictServer.revision, pending: false });
       conflictServer = null;

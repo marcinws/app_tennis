@@ -154,6 +154,12 @@ const fullSteps = [
     () => saveCapturedMatchLog(0, [PLAYER_POINT]),
     { status: 200, text: '"revision":1' },
   ],
+  // The same lost response, with a point added since: the extension is saved, not reported as a conflict.
+  [
+    "a log extending the stored one is saved",
+    () => saveCapturedMatchLog(0, [PLAYER_POINT, PLAYER_POINT]),
+    { status: 200, text: '"revision":2' },
+  ],
   [
     "a different log on a stale revision is a conflict",
     () => saveCapturedMatchLog(0, [OPPONENT_POINT]),

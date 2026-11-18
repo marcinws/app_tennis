@@ -1,12 +1,16 @@
 import type { APIRoute } from "astro";
 import { z } from "astro/zod";
 import { createClient } from "@/lib/supabase";
-import { type FirstServer, MATCH_FORMATS, type MatchFormatId } from "@/lib/services/matches";
-import { parseMatchActions, replayMatch, sameActions } from "@/lib/services/scoring";
+import { type FirstServer, isMatchFormatId } from "@/lib/services/matches";
+import { extendsActions, parseMatchActions, replayMatch, sameActions } from "@/lib/services/scoring";
+
+// The largest valid log (2000 actions) is about 72 KB; anything far above it is not worth parsing.
+const MAX_BODY_BYTES = 131_072;
 
 const matchIdSchema = z.uuid();
 const logBodySchema = z.object({
-  base_revision: z.number().int().nonnegative(),
+  // Below the Postgres integer maximum, so revision + 1 still fits.
+  base_revision: z.number().int().nonnegative().max(2147483646),
   events: z.unknown(),
 });
 
@@ -28,10 +32,6 @@ function saveFailed(message: string, cause: unknown) {
   return json({ error: "save_failed" }, 500);
 }
 
-function isMatchFormatId(value: string): value is MatchFormatId {
-  return MATCH_FORMATS.some((format) => format.id === value);
-}
-
 // Saves the whole match log, conditional on the revision the client built it on.
 export const PUT: APIRoute = async (context) => {
   const parsedId = matchIdSchema.safeParse(context.params.id);
@@ -39,6 +39,11 @@ export const PUT: APIRoute = async (context) => {
     return json({ error: "match_not_found" }, 404);
   }
   const id = parsedId.data;
+
+  const contentLength = context.request.headers.get("Content-Length");
+  if (contentLength !== null && Number(contentLength) > MAX_BODY_BYTES) {
+    return json({ error: "payload_too_large" }, 413);
+  }
 
   let rawBody: unknown;
   try {
@@ -122,6 +127,42 @@ export const PUT: APIRoute = async (context) => {
   }
   if (sameActions(stored.actions, actions)) {
     return json({ revision: current.revision }, 200);
+  }
+  // A retry whose response was lost, with points added since. Saving the extension is safe,
+  // because no stored action is ever dropped, whichever phone recorded it.
+  if (extendsActions(stored.actions, actions)) {
+    const { data: extended, error: extendError } = await supabase
+      .from("matches")
+      .update({ events: actions, revision: current.revision + 1 })
+      .eq("id", id)
+      .eq("revision", current.revision)
+      .select("revision")
+      .maybeSingle()
+      .overrideTypes<{ revision: number } | null, { merge: false }>();
+    if (extendError) {
+      return saveFailed("Failed to save an extended match log", extendError);
+    }
+    if (extended) {
+      return json({ revision: extended.revision }, 200);
+    }
+    // Another save won the race; report its log as a conflict.
+    const { data: latest, error: latestError } = await supabase
+      .from("matches")
+      .select("events, revision")
+      .eq("id", id)
+      .maybeSingle()
+      .overrideTypes<Pick<StoredMatch, "events" | "revision"> | null, { merge: false }>();
+    if (latestError) {
+      return saveFailed("Failed to reread match log after a lost extension race", latestError);
+    }
+    if (!latest) {
+      return json({ error: "match_not_found" }, 404);
+    }
+    const latestActions = parseMatchActions(latest.events);
+    if (!latestActions.ok) {
+      return saveFailed("Stored match log is invalid", { id, revision: latest.revision });
+    }
+    return json({ error: "conflict", revision: latest.revision, events: latestActions.actions }, 409);
   }
   return json({ error: "conflict", revision: current.revision, events: stored.actions }, 409);
 };

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useMatchLog, type MatchLogStatus } from "@/components/hooks/useMatchLog";
 import type { MatchFormatId } from "@/lib/services/matches";
-import { gamePointLabels, type MatchAction, replayMatch, type Side } from "@/lib/services/scoring";
+import { gamePointLabels, MAX_MATCH_ACTIONS, type MatchAction, replayMatch, type Side } from "@/lib/services/scoring";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -15,6 +15,17 @@ interface Props {
   initialRevision: number;
 }
 
+// Polish plural of "akcja": 1 akcja, 2–4 akcje (not 12–14), otherwise akcji.
+function actionsLabel(count: number): string {
+  if (count === 1) {
+    return "1 akcja";
+  }
+  const lastDigit = count % 10;
+  const lastTwo = count % 100;
+  const few = lastDigit >= 2 && lastDigit <= 4 && (lastTwo < 12 || lastTwo > 14);
+  return `${count} ${few ? "akcje" : "akcji"}`;
+}
+
 function statusText(status: MatchLogStatus): string | null {
   switch (status.kind) {
     case "saved":
@@ -22,6 +33,9 @@ function statusText(status: MatchLogStatus): string | null {
     case "waiting":
       return "Czeka na sieć — punkty są na telefonie";
     case "error":
+      if (status.local) {
+        return `Uwaga: ${status.detail ?? "błąd na telefonie"}`;
+      }
       return `Błąd zapisu (${status.detail ?? "nieznany"}), ponawiam`;
     case "unauthorized":
       return "Sesja wygasła — zaloguj się ponownie, punkty są na telefonie";
@@ -42,7 +56,7 @@ export default function MatchRecorder({
   initialActions,
   initialRevision,
 }: Props) {
-  const { ready, actions, status, record, undo, keepServer, keepMine } = useMatchLog({
+  const { ready, actions, status, conflict, record, undo, keepServer, keepMine } = useMatchLog({
     matchId,
     initialActions,
     initialRevision,
@@ -56,7 +70,9 @@ export default function MatchRecorder({
   const state = replay.ok ? replay.state : null;
   const labels = state ? gamePointLabels(state, withAdvantage) : null;
   const finished = state !== null && state.winner !== null;
-  const canScore = ready && state !== null && !finished;
+  const atLimit = actions.length >= MAX_MATCH_ACTIONS;
+  // During a conflict the user must choose a version before recording anything.
+  const canScore = ready && state !== null && !finished && conflict === null && !atLimit;
   const message = statusText(status);
 
   return (
@@ -159,7 +175,7 @@ export default function MatchRecorder({
           type="button"
           variant="outline"
           className="text-foreground min-h-12 w-full"
-          disabled={!ready || actions.length === 0}
+          disabled={!ready || actions.length === 0 || conflict !== null}
           onClick={undo}
         >
           Cofnij
@@ -177,9 +193,14 @@ export default function MatchRecorder({
         </Button>
       </div>
 
-      {status.kind === "conflict" && (
+      {atLimit && <p className="text-sm text-yellow-200">Osiągnięto limit akcji w meczu</p>}
+
+      {conflict && (
         <div role="alert" className="space-y-3 rounded-md border border-yellow-300/40 bg-yellow-500/20 p-3 text-sm">
           <p>Mecz zmieniono na innym telefonie</p>
+          <p>
+            Na tym telefonie: {actionsLabel(actions.length)}, na serwerze: {actionsLabel(conflict.serverCount)}.
+          </p>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" className="text-foreground" onClick={keepServer}>
               Wczytaj wersję z serwera
