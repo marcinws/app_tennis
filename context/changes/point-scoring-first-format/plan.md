@@ -547,19 +547,19 @@ Migracja jest addytywna: dwie kolumny z domyślnymi wartościami, nowe uprawnien
 
 #### Automated
 
-- [x] 3.1 Testy przechodzą: `npm test`
-- [x] 3.2 Celowe zepsucie pierwszeństwa w `chooseInitialLog` daje czerwony test; zmiana cofnięta
-- [x] 3.3 Lint przechodzi: `npm run lint`
-- [x] 3.4 Typy przechodzą: `npx astro check`
-- [x] 3.5 Build przechodzi: `npm run build`
-- [x] 3.6 Klient nie podąża za przekierowaniem
+- [x] 3.1 Testy przechodzą: `npm test` — 47f92ca
+- [x] 3.2 Celowe zepsucie pierwszeństwa w `chooseInitialLog` daje czerwony test; zmiana cofnięta — 47f92ca
+- [x] 3.3 Lint przechodzi: `npm run lint` — 47f92ca
+- [x] 3.4 Typy przechodzą: `npx astro check` — 47f92ca
+- [x] 3.5 Build przechodzi: `npm run build` — 47f92ca
+- [x] 3.6 Klient nie podąża za przekierowaniem — 47f92ca
 
 ### Phase 4: Smoke, ustawienia produkcji i wdrożenie
 
 #### Automated
 
-- [ ] 4.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
-- [ ] 4.2 Lint przechodzi: `npm run lint`
+- [x] 4.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
+- [x] 4.2 Lint przechodzi: `npm run lint`
 - [ ] 4.3 CI dla PR zielone (`ci` i `smoke`, w tym kroki zapisu przebiegu i konta B)
 
 #### Manual

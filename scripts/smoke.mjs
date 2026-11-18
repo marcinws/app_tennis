@@ -2,6 +2,8 @@
 // Zero dependencies on purpose. Run against a live server: BASE_URL=http://localhost:4321 node scripts/smoke.mjs
 // SMOKE_MODE=full (default) creates two accounts, a player and a match; SMOKE_MODE=production writes nothing and is the only mode safe for production.
 
+import { randomUUID } from "node:crypto";
+
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:4321";
 const MODE = process.env.SMOKE_MODE ?? "full";
 const runId = Date.now();
@@ -28,7 +30,7 @@ function storeCookies(response) {
   }
 }
 
-async function request(path, { method = "GET", form } = {}) {
+async function request(path, { method = "GET", form, json } = {}) {
   const response = await fetch(BASE_URL + path, {
     method,
     redirect: "manual",
@@ -36,8 +38,9 @@ async function request(path, { method = "GET", form } = {}) {
       Cookie: cookieHeader(),
       Origin: BASE_URL,
       ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
+      ...(json ? { "Content-Type": "application/json" } : {}),
     },
-    body: form ? new URLSearchParams(form).toString() : undefined,
+    body: form ? new URLSearchParams(form).toString() : json ? JSON.stringify(json) : undefined,
   });
   storeCookies(response);
   return { status: response.status, location: response.headers.get("location") ?? "", body: await response.text() };
@@ -86,6 +89,17 @@ function requestCapturedMatch() {
   return request(`/matches/${matchAId}`);
 }
 
+const PLAYER_POINT = { type: "point", winner: "player" };
+const OPPONENT_POINT = { type: "point", winner: "opponent" };
+// 12 games of 4 points win the match 6:0 6:0, so the 49th point comes after the match has ended.
+const MATCH_WINNING_POINTS = Array.from({ length: 48 }, () => PLAYER_POINT);
+
+// Saves the log of account A's match. Throws when the match id was not captured, so a missing id cannot pass as a rejected save.
+function saveCapturedMatchLog(baseRevision, events) {
+  if (!matchAId) throw new Error("Match id of account A was not captured");
+  return request(`/api/matches/${matchAId}/log`, { method: "PUT", json: { base_revision: baseRevision, events } });
+}
+
 const fullSteps = [
   ["home renders", () => request("/"), { status: 200 }],
   ["dashboard redirects anonymous user", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
@@ -130,6 +144,33 @@ const fullSteps = [
   ["starting a match redirects to the match", startAndCaptureMatch, { status: 302, location: "/matches/" }],
   ["match page shows the tournament", requestCapturedMatch, { status: 200, text: TOURNAMENT_NAME }],
   [
+    "saving the first point bumps the revision",
+    () => saveCapturedMatchLog(0, [PLAYER_POINT]),
+    { status: 200, text: '"revision":1' },
+  ],
+  // A retry whose response was lost must succeed with the same revision, not report a conflict.
+  [
+    "retrying the same save returns the same revision",
+    () => saveCapturedMatchLog(0, [PLAYER_POINT]),
+    { status: 200, text: '"revision":1' },
+  ],
+  [
+    "a different log on a stale revision is a conflict",
+    () => saveCapturedMatchLog(0, [OPPONENT_POINT]),
+    { status: 409, text: '"conflict"' },
+  ],
+  [
+    "unknown log action is rejected",
+    () => saveCapturedMatchLog(1, [{ type: "bogus" }]),
+    { status: 400, text: '"invalid_log"' },
+  ],
+  [
+    "a point after the match ended is rejected",
+    () => saveCapturedMatchLog(1, [...MATCH_WINNING_POINTS, PLAYER_POINT]),
+    { status: 400, text: '"action_after_match_end"' },
+  ],
+  ["match page renders after saving the log", requestCapturedMatch, { status: 200 }],
+  [
     "new match form links the last match",
     () => request("/matches/new"),
     {
@@ -164,6 +205,11 @@ const fullSteps = [
   ["players of first account are hidden from second", () => request("/players"), { status: 200, absent: PLAYER_NAME }],
   ["second account cannot rename first account's player", renameCapturedPlayer, { status: 404 }],
   ["second account cannot open first account's match", requestCapturedMatch, { status: 404 }],
+  [
+    "second account cannot save first account's match log",
+    () => saveCapturedMatchLog(1, [PLAYER_POINT, PLAYER_POINT]),
+    { status: 404, text: '"match_not_found"' },
+  ],
   [
     "second account cannot start a match for first account's player",
     () => startMatchForCapturedPlayer({ tournament_name: TOURNAMENT_NAME }),
@@ -201,6 +247,16 @@ const productionSteps = [
         form: { email: `smoke-probe-${Date.now()}@example.com`, password },
       }),
     { status: 302, location: "/auth/signin?error=Invalid%20login%20credentials" },
+  ],
+  // The middleware redirects before the route runs, so nothing is written.
+  [
+    "match log save redirects anonymous user",
+    () =>
+      request(`/api/matches/${randomUUID()}/log`, {
+        method: "PUT",
+        json: { base_revision: 0, events: [PLAYER_POINT] },
+      }),
+    { status: 302, location: "/auth/signin" },
   ],
 ];
 
