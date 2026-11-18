@@ -1,7 +1,8 @@
 ---
 change_id: point-scoring-first-format
 title: "Zapis punktów z cofaniem, odporny na brak sieci (1. format)"
-status: impl_reviewed
+status: archived
+archived_at: 2026-11-18T12:34:57Z
 created: 2026-11-18
 updated: 2026-11-18
 ---
