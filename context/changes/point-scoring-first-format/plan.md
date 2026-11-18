@@ -526,22 +526,22 @@ Migracja jest addytywna: dwie kolumny z domyślnymi wartościami, nowe uprawnien
 
 #### Automated
 
-- [x] 1.1 Testy przechodzą: `npm test`
-- [x] 1.2 Celowe zepsucie reguły przewag daje czerwony test; zmiana cofnięta
-- [x] 1.3 Celowe zepsucie kolejności serwującego w tie-breaku daje czerwony test; zmiana cofnięta
-- [x] 1.4 Lint przechodzi: `npm run lint`
-- [x] 1.5 Typy przechodzą: `npx astro check`
+- [x] 1.1 Testy przechodzą: `npm test` — 93a8ab5
+- [x] 1.2 Celowe zepsucie reguły przewag daje czerwony test; zmiana cofnięta — 93a8ab5
+- [x] 1.3 Celowe zepsucie kolejności serwującego w tie-breaku daje czerwony test; zmiana cofnięta — 93a8ab5
+- [x] 1.4 Lint przechodzi: `npm run lint` — 93a8ab5
+- [x] 1.5 Typy przechodzą: `npx astro check` — 93a8ab5
 
 ### Phase 2: Migracja i trasa zapisu przebiegu
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Typy przechodzą: `npx astro check`
-- [ ] 2.4 Build przechodzi: `npm run build`
-- [ ] 2.5 Migracja nadaje `update` tylko na dwie kolumny i dodaje politykę `update`
-- [ ] 2.6 Limit długości zgodny z kodem
+- [x] 2.1 Testy przechodzą: `npm test`
+- [x] 2.2 Lint przechodzi: `npm run lint`
+- [x] 2.3 Typy przechodzą: `npx astro check`
+- [x] 2.4 Build przechodzi: `npm run build`
+- [x] 2.5 Migracja nadaje `update` tylko na dwie kolumny i dodaje politykę `update`
+- [x] 2.6 Limit długości zgodny z kodem
 
 ### Phase 3: Ekran zapisu z kolejką na telefonie
 

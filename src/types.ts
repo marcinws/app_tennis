@@ -13,6 +13,9 @@ export interface Match {
   with_advantage: boolean;
   first_server: FirstServer;
   created_at: string;
+  // Untrusted until read through parseMatchActions; the database only enforces an array.
+  events: unknown;
+  revision: number;
   // Embedded record from `players(name)`.
   player: { name: string };
 }
