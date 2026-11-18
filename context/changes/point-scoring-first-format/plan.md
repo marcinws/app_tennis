@@ -558,16 +558,16 @@ Migracja jest addytywna: dwie kolumny z domyślnymi wartościami, nowe uprawnien
 
 #### Automated
 
-- [x] 4.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
-- [x] 4.2 Lint przechodzi: `npm run lint`
-- [ ] 4.3 CI dla PR zielone (`ci` i `smoke`, w tym kroki zapisu przebiegu i konta B)
+- [x] 4.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs` — 732a354
+- [x] 4.2 Lint przechodzi: `npm run lint` — 732a354
+- [x] 4.3 CI dla PR zielone (`ci` i `smoke`, w tym kroki zapisu przebiegu i konta B) — 732a354
 
 #### Manual
 
-- [ ] 4.4 Migracja na produkcji: `db push` i `migration list --linked`
-- [ ] 4.5 Ustawienia produkcji według lekcji: kolumny, uprawnienie `update` na kolumny, polityka, Data API
-- [ ] 4.6 Po merge na `main` job `deploy` zielony
-- [ ] 4.7 Na Androidzie: zapis, cofanie, zmiana serwującego, tryb samolotowy i powrót sieci, przeładowanie
-- [ ] 4.8 Na Androidzie: koniec meczu i odpowiedź poniżej 200 ms
-- [ ] 4.9 Konflikt w drugiej przeglądarce i obie opcje
-- [ ] 4.10 Workers Logs: brak błędów 1102 dla zapisu przebiegu
+- [x] 4.4 Migracja na produkcji: `db push` i `migration list --linked` — 732a354
+- [x] 4.5 Ustawienia produkcji według lekcji: kolumny, uprawnienie `update` na kolumny, polityka, Data API — 732a354
+- [x] 4.6 Po merge na `main` job `deploy` zielony — 2b73cd2
+- [x] 4.7 Na Androidzie: zapis, cofanie, zmiana serwującego, tryb samolotowy i powrót sieci, przeładowanie — 2b73cd2
+- [x] 4.8 Na Androidzie: koniec meczu i odpowiedź poniżej 200 ms — 2b73cd2
+- [x] 4.9 Konflikt w drugiej przeglądarce i obie opcje — 2b73cd2
+- [x] 4.10 Workers Logs: brak błędów 1102 dla zapisu przebiegu — 2b73cd2
