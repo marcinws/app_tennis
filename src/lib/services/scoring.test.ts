@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  extendsActions,
   gamePointLabels,
   type MatchAction,
   type MatchSetup,
@@ -276,5 +277,34 @@ describe("sameActions", () => {
 
   it("rejects logs with a different action type", () => {
     expect(sameActions(log, [...points("player", 3)])).toBe(false);
+  });
+});
+
+describe("extendsActions", () => {
+  const log: MatchAction[] = [...points("player", 2), switchServer];
+
+  it("accepts equal logs", () => {
+    expect(extendsActions(log, [...points("player", 2), switchServer])).toBe(true);
+  });
+
+  it("accepts a sent log that extends the stored one", () => {
+    expect(extendsActions(log, [...log, ...points("opponent", 1)])).toBe(true);
+  });
+
+  it("accepts an empty stored log", () => {
+    expect(extendsActions([], log)).toBe(true);
+  });
+
+  it("rejects a sent log shorter than the stored one", () => {
+    expect(extendsActions(log, log.slice(0, -1))).toBe(false);
+  });
+
+  it("rejects a log of the same length with a different action", () => {
+    expect(extendsActions(log, [...points("player", 3)])).toBe(false);
+  });
+
+  it("rejects a sent log that differs in the middle", () => {
+    const sent = [...points("player", 1), ...points("opponent", 1), switchServer, ...points("player", 1)];
+    expect(extendsActions(log, sent)).toBe(false);
   });
 });

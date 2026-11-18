@@ -4,7 +4,7 @@ import Layout from "@/layouts/Layout.astro";
 import Topbar from "@/components/Topbar.astro";
 import { createClient } from "@/lib/supabase";
 import MatchRecorder from "@/components/match/MatchRecorder";
-import { MATCH_FORMATS, type MatchFormatId, matchFormatLabel } from "@/lib/services/matches";
+import { isMatchFormatId, matchFormatLabel } from "@/lib/services/matches";
 import { parseMatchActions } from "@/lib/services/scoring";
 import type { Match } from "@/types";
 
@@ -14,10 +14,6 @@ function notFound() {
 
 function loadFailed() {
   return new Response("Nie udało się wczytać meczu", { status: 500 });
-}
-
-function isMatchFormatId(value: string): value is MatchFormatId {
-  return MATCH_FORMATS.some((format) => format.id === value);
 }
 
 const parsedId = z.uuid().safeParse(Astro.params.id);

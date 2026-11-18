@@ -122,8 +122,23 @@ describe("interpretSyncResponse", () => {
   it.each([
     [400, "invalid_log"],
     [404, "match_not_found"],
+    [413, "payload_too_large"],
   ])("reads %i as rejected", (status, error) => {
     expect(interpretSyncResponse({ kind: "http", status, body: { error } })).toEqual({ kind: "rejected", error });
+  });
+
+  it.each([403, 415])("reads %i without an error code as rejected with the status", (status) => {
+    expect(interpretSyncResponse({ kind: "http", status, body: null })).toEqual({
+      kind: "rejected",
+      error: `http_${status}`,
+    });
+  });
+
+  it("reads 503 as retry", () => {
+    expect(interpretSyncResponse({ kind: "http", status: 503, body: null })).toEqual({
+      kind: "retry",
+      reason: "http_503",
+    });
   });
 
   it("reads 500 as retry", () => {

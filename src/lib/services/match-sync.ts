@@ -113,7 +113,8 @@ export function interpretSyncResponse(response: SyncResponse): SyncOutcome {
   if (status === 401) {
     return { kind: "unauthorized" };
   }
-  if (status === 400 || status === 404) {
+  // A retry cannot fix any other client error.
+  if (status >= 400 && status < 500) {
     return { kind: "rejected", error: errorCode(body, status) };
   }
   return { kind: "retry", reason: errorCode(body, status) };
