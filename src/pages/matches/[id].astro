@@ -3,11 +3,21 @@ import { z } from "astro/zod";
 import Layout from "@/layouts/Layout.astro";
 import Topbar from "@/components/Topbar.astro";
 import { createClient } from "@/lib/supabase";
-import { matchFormatLabel } from "@/lib/services/matches";
+import MatchRecorder from "@/components/match/MatchRecorder";
+import { MATCH_FORMATS, type MatchFormatId, matchFormatLabel } from "@/lib/services/matches";
+import { parseMatchActions } from "@/lib/services/scoring";
 import type { Match } from "@/types";
 
 function notFound() {
   return new Response("Nie znaleziono meczu", { status: 404 });
+}
+
+function loadFailed() {
+  return new Response("Nie udało się wczytać meczu", { status: 500 });
+}
+
+function isMatchFormatId(value: string): value is MatchFormatId {
+  return MATCH_FORMATS.some((format) => format.id === value);
 }
 
 const parsedId = z.uuid().safeParse(Astro.params.id);
@@ -23,17 +33,32 @@ if (!supabase) {
 // Under RLS a foreign match is indistinguishable from a missing one: both read as no row.
 const { data: match, error: queryError } = await supabase
   .from("matches")
-  .select("id, tournament_name, format, with_advantage, first_server, created_at, player:players(name)")
+  .select(
+    "id, tournament_name, format, with_advantage, first_server, created_at, events, revision, player:players(name)",
+  )
   .eq("id", parsedId.data)
   .maybeSingle()
   .overrideTypes<Match | null, { merge: false }>();
 if (queryError) {
   // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
   console.error("Failed to load match", queryError);
-  return new Response("Nie udało się wczytać meczu", { status: 500 });
+  return loadFailed();
 }
 if (!match) {
   return notFound();
+}
+
+const matchFormat = match.format;
+if (!isMatchFormatId(matchFormat)) {
+  // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
+  console.error("Stored match has an unknown format", { id: match.id, format: matchFormat });
+  return loadFailed();
+}
+const parsedLog = parseMatchActions(match.events);
+if (!parsedLog.ok) {
+  // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
+  console.error("Stored match log is invalid", { id: match.id, revision: match.revision });
+  return loadFailed();
 }
 
 const startedAt = new Date(match.created_at).toLocaleString("pl-PL", {
@@ -52,6 +77,17 @@ const firstServer = match.first_server === "player" ? match.player.name : "Przec
         <h1 class="mb-6 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-3xl font-bold text-transparent">
           {match.player.name}
         </h1>
+
+        <MatchRecorder
+          client:load
+          matchId={match.id}
+          playerName={match.player.name}
+          format={matchFormat}
+          withAdvantage={match.with_advantage}
+          firstServer={match.first_server}
+          initialActions={parsedLog.actions}
+          initialRevision={match.revision}
+        />
 
         <dl class="mb-6 space-y-3 text-sm">
           <div>

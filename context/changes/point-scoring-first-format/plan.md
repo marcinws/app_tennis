@@ -536,23 +536,23 @@ Migracja jest addytywna: dwie kolumny z domyślnymi wartościami, nowe uprawnien
 
 #### Automated
 
-- [x] 2.1 Testy przechodzą: `npm test`
-- [x] 2.2 Lint przechodzi: `npm run lint`
-- [x] 2.3 Typy przechodzą: `npx astro check`
-- [x] 2.4 Build przechodzi: `npm run build`
-- [x] 2.5 Migracja nadaje `update` tylko na dwie kolumny i dodaje politykę `update`
-- [x] 2.6 Limit długości zgodny z kodem
+- [x] 2.1 Testy przechodzą: `npm test` — 7710be4
+- [x] 2.2 Lint przechodzi: `npm run lint` — 7710be4
+- [x] 2.3 Typy przechodzą: `npx astro check` — 7710be4
+- [x] 2.4 Build przechodzi: `npm run build` — 7710be4
+- [x] 2.5 Migracja nadaje `update` tylko na dwie kolumny i dodaje politykę `update` — 7710be4
+- [x] 2.6 Limit długości zgodny z kodem — 7710be4
 
 ### Phase 3: Ekran zapisu z kolejką na telefonie
 
 #### Automated
 
-- [ ] 3.1 Testy przechodzą: `npm test`
-- [ ] 3.2 Celowe zepsucie pierwszeństwa w `chooseInitialLog` daje czerwony test; zmiana cofnięta
-- [ ] 3.3 Lint przechodzi: `npm run lint`
-- [ ] 3.4 Typy przechodzą: `npx astro check`
-- [ ] 3.5 Build przechodzi: `npm run build`
-- [ ] 3.6 Klient nie podąża za przekierowaniem
+- [x] 3.1 Testy przechodzą: `npm test`
+- [x] 3.2 Celowe zepsucie pierwszeństwa w `chooseInitialLog` daje czerwony test; zmiana cofnięta
+- [x] 3.3 Lint przechodzi: `npm run lint`
+- [x] 3.4 Typy przechodzą: `npx astro check`
+- [x] 3.5 Build przechodzi: `npm run build`
+- [x] 3.6 Klient nie podąża za przekierowaniem
 
 ### Phase 4: Smoke, ustawienia produkcji i wdrożenie
 
