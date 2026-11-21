@@ -68,7 +68,9 @@ export default function GameList({ history, names, withAdvantage }: Props) {
               const details = [note, record.manual ? "ręcznie" : null].filter((detail) => detail !== null);
               return (
                 <tr key={record.game} className="border-t border-white/10 align-top">
-                  <td className="py-1.5 tabular-nums">{record.tiebreak ? "TB" : record.game}</td>
+                  <td className="py-1.5 tabular-nums">
+                    {record.superTiebreak ? "STB" : record.tiebreak ? "TB" : record.game}
+                  </td>
                   <td className="truncate py-1.5">{names[record.server]}</td>
                   <td className={cn("truncate py-1.5", record.winner === "player" && "font-semibold")}>
                     {names[record.winner]}
@@ -78,7 +80,8 @@ export default function GameList({ history, names, withAdvantage }: Props) {
                     {details.length > 0 && <span className="block text-xs text-blue-100/70">{details.join(", ")}</span>}
                   </td>
                   <td className="py-1.5 text-right tabular-nums">
-                    {record.setScore.player}:{record.setScore.opponent}
+                    {/* A super tie-break is not a set of games, so it has no set score. */}
+                    {record.superTiebreak ? "–" : `${record.setScore.player}:${record.setScore.opponent}`}
                   </td>
                 </tr>
               );

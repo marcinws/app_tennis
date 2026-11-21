@@ -11,6 +11,7 @@ const matchFormSchema = z.object({
   player_id: z.uuid(),
   tournament_name: z.string(),
   format: z.string(),
+  with_advantage: z.string(),
   first_server: z.string(),
 });
 
@@ -21,6 +22,7 @@ export const POST: APIRoute = async (context) => {
     player_id: form.get("player_id") ?? "",
     tournament_name: form.get("tournament_name") ?? "",
     format: form.get("format") ?? "",
+    with_advantage: form.get("with_advantage") ?? "",
     first_server: form.get("first_server") ?? "",
   });
   if (!parsedForm.success) {
@@ -29,6 +31,7 @@ export const POST: APIRoute = async (context) => {
   const parsedStart = parseMatchStart({
     tournamentName: parsedForm.data.tournament_name,
     format: parsedForm.data.format,
+    withAdvantage: parsedForm.data.with_advantage,
     firstServer: parsedForm.data.first_server,
   });
   if (!parsedStart.ok) {
@@ -46,6 +49,7 @@ export const POST: APIRoute = async (context) => {
       player_id: parsedForm.data.player_id,
       tournament_name: parsedStart.value.tournamentName,
       format: parsedStart.value.format,
+      with_advantage: parsedStart.value.withAdvantage,
       first_server: parsedStart.value.firstServer,
     })
     .select("id")
