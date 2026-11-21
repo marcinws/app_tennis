@@ -15,6 +15,8 @@ const PLAYER_NAME = "Smoke Player";
 const TOURNAMENT_NAME = "Smoke Cup";
 let playerAId;
 let matchAId;
+// Account A's short-set match without advantage, started after the last-match link check.
+let shortMatchId;
 
 function cookieHeader() {
   return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
@@ -67,7 +69,14 @@ function startMatchForCapturedPlayer(fields) {
   if (!playerAId) throw new Error("Player id of account A was not captured");
   return request("/api/matches", {
     method: "POST",
-    form: { player_id: playerAId, tournament_name: "", format: "best_of_3_sets", first_server: "player", ...fields },
+    form: {
+      player_id: playerAId,
+      tournament_name: "",
+      format: "best_of_3_sets",
+      with_advantage: "true",
+      first_server: "player",
+      ...fields,
+    },
   });
 }
 
@@ -84,6 +93,23 @@ async function startAndCaptureMatch() {
   return actual;
 }
 
+// Starts the short-set match without advantage and reads its id, like startAndCaptureMatch.
+async function startAndCaptureShortMatch() {
+  const actual = await startMatchForCapturedPlayer({ format: "short_sets", with_advantage: "false" });
+  const match = /^\/matches\/([0-9a-f-]{36})$/.exec(actual.location);
+  if (!match)
+    throw new Error(
+      `No match id in the redirect after starting a short-set match (status ${actual.status}, location "${actual.location}")`,
+    );
+  shortMatchId = match[1];
+  return actual;
+}
+
+function saveShortMatchLog(baseRevision, events) {
+  if (!shortMatchId) throw new Error("Short-set match id of account A was not captured");
+  return request(`/api/matches/${shortMatchId}/log`, { method: "PUT", json: { base_revision: baseRevision, events } });
+}
+
 function requestCapturedMatch() {
   if (!matchAId) throw new Error("Match id of account A was not captured");
   return request(`/matches/${matchAId}`);
@@ -96,6 +122,9 @@ const MATCH_WINNING_POINTS = Array.from({ length: 48 }, () => PLAYER_POINT);
 // A hand-entered 4:0 wins the game; 6:3 cannot happen in a game with advantage, which the smoke match uses.
 const MANUAL_GAME_WON = { type: "game_score", player: 4, opponent: 0 };
 const MANUAL_GAME_IMPOSSIBLE = { type: "game_score", player: 6, opponent: 3 };
+// Without advantage the point at 40:40 wins the game (4:3), so 5:3 can only happen with advantage.
+const DECIDING_POINT_GAME = { type: "game_score", player: 4, opponent: 3 };
+const ADVANTAGE_GAME = { type: "game_score", player: 5, opponent: 3 };
 
 // Saves the log of account A's match. Throws when the match id was not captured, so a missing id cannot pass as a rejected save.
 function saveCapturedMatchLog(baseRevision, events) {
@@ -205,6 +234,31 @@ const fullSteps = [
     "unknown match format is rejected",
     () => startMatchForCapturedPlayer({ format: "custom" }),
     { status: 302, location: "/matches/new?error=format_invalid" },
+  ],
+  [
+    "unknown advantage value is rejected",
+    () => startMatchForCapturedPlayer({ with_advantage: "maybe" }),
+    { status: 302, location: "/matches/new?error=advantage_invalid" },
+  ],
+  [
+    "a short-set match without advantage starts",
+    startAndCaptureShortMatch,
+    {
+      status: 302,
+      get location() {
+        return `/matches/${shortMatchId}`;
+      },
+    },
+  ],
+  [
+    "a game won at 40:40 is accepted without advantage",
+    () => saveShortMatchLog(0, [DECIDING_POINT_GAME]),
+    { status: 200, text: '"revision":1' },
+  ],
+  [
+    "advantage scores are rejected without advantage",
+    () => saveShortMatchLog(1, [DECIDING_POINT_GAME, ADVANTAGE_GAME]),
+    { status: 400, text: '"invalid_game_score"' },
   ],
   ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, location: "/" }],
   ["dashboard redirects after signout", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
