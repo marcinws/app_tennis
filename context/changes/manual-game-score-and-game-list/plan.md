@@ -265,6 +265,10 @@ Kolejność kroków przed nimi zostaje bez zmian; kroki konta B i produkcyjne be
 
 Brak migracji. Istniejące przebiegi mają tylko akcje `point` i `switch_server`, które odtwarzają się jak dotąd. Telefon ze starym kodem w otwartej karcie nie zna `game_score`; po przeładowaniu strony dostaje nowy kod z serwera.
 
+## Adaptacje po wdrożeniu
+
+Zaakceptowane w przeglądzie implementacji (`reviews/impl-review.md`, F7): tie-break w „Przebiegu meczu” ma numer „TB” zamiast 13; gem bez przewag wygrany 4:3 ma opis „przy 40:40”; opis wyniku w panelu stoi nad przyciskami Anuluj/Zapisz, a nie pod nimi.
+
 ## References
 
 - Roadmapa: `context/foundation/roadmap.md` (S-04), PRD: `context/foundation/prd.md` (FR-007, FR-009)
