@@ -42,7 +42,9 @@ export default function GameList({ history, names, withAdvantage }: Props) {
       </h2>
       {groupBySet(history).map((games) => (
         <table key={games[0].set} className="w-full table-fixed border-collapse text-left text-sm">
-          <caption className="mb-1 text-left text-xs text-blue-100/70">Set {games[0].set}</caption>
+          <caption className="mb-1 text-left text-xs text-blue-100/70">
+            {games[0].superTiebreak ? "Super tie-break" : `Set ${games[0].set}`}
+          </caption>
           <thead className="text-xs text-blue-100/70">
             <tr>
               <th scope="col" className="w-10 font-normal">

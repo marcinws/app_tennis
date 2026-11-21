@@ -106,9 +106,12 @@ export default function MatchRecorder({
               ))}
               {!finished && (
                 <>
-                  <th scope="col" className="font-normal">
-                    Gemy
-                  </th>
+                  {/* A super tie-break has no games of its own. */}
+                  {!state.superTiebreak && (
+                    <th scope="col" className="font-normal">
+                      Gemy
+                    </th>
+                  )}
                   <th scope="col" className="font-normal">
                     {state.superTiebreak ? "Super tie-break" : state.inTiebreak ? "Tie-break" : "Punkty"}
                   </th>
@@ -144,7 +147,7 @@ export default function MatchRecorder({
                 ))}
                 {!finished && (
                   <>
-                    <td className="py-2 tabular-nums">{state.games[side]}</td>
+                    {!state.superTiebreak && <td className="py-2 tabular-nums">{state.games[side]}</td>}
                     <td className="py-2 font-bold tabular-nums">{labels[side]}</td>
                   </>
                 )}
