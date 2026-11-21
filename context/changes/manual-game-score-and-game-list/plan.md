@@ -299,19 +299,19 @@ Brak migracji. Istniejące przebiegi mają tylko akcje `point` i `switch_server`
 
 #### Manual
 
-- [ ] 2.5 Na telefonie: wpis w trakcie gema zmienia wynik, a następne punkty liczą się od niego
-- [ ] 2.6 Na telefonie: „Gem dla …” zamyka gem, zmienia serwującego, trafia do „Przebiegu meczu” ze znacznikiem „ręcznie”; „Cofnij” usuwa wpis
-- [ ] 2.7 Na telefonie: liczniki tie-breaka działają, a „Zapisz” jest nieaktywne dla wyniku niemożliwego
+- [x] 2.5 Na telefonie: wpis w trakcie gema zmienia wynik, a następne punkty liczą się od niego — d5dada4
+- [x] 2.6 Na telefonie: „Gem dla …” zamyka gem, zmienia serwującego, trafia do „Przebiegu meczu” ze znacznikiem „ręcznie”; „Cofnij” usuwa wpis — d5dada4
+- [x] 2.7 Na telefonie: liczniki tie-breaka działają, a „Zapisz” jest nieaktywne dla wyniku niemożliwego — d5dada4
 
 ### Phase 3: Smoke i wdrożenie
 
 #### Automated
 
-- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
-- [ ] 3.2 CI na PR zielone, w tym oba nowe kroki smoke
-- [ ] 3.3 Po merge job `deploy` i smoke produkcyjny zielone
+- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs` — a87420b
+- [x] 3.2 CI na PR zielone, w tym oba nowe kroki smoke — e9849d8
+- [x] 3.3 Po merge job `deploy` i smoke produkcyjny zielone — e9849d8
 
 #### Manual
 
-- [ ] 3.4 Na telefonie na produkcji: ręczny gem zapisuje się przy włączonej i wyłączonej sieci
-- [ ] 3.5 Dziennik wdrożeń uzupełniony
+- [x] 3.4 Na telefonie na produkcji: ręczny gem zapisuje się przy włączonej i wyłączonej sieci — e9849d8
+- [x] 3.5 Dziennik wdrożeń uzupełniony — e9849d8

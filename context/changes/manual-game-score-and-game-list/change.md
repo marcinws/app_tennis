@@ -1,9 +1,9 @@
 ---
 change_id: manual-game-score-and-game-list
 title: Manual game score and game list
-status: implementing
+status: implemented
 created: 2026-11-18
-updated: 2026-11-18
+updated: 2026-11-21
 archived_at: null
 ---
 
