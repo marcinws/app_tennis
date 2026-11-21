@@ -29,11 +29,15 @@ export interface ScoringRules {
   tiebreakAt: number;
   tiebreakTo: number;
   setsToWin: number;
+  // Points of the tie-break played instead of the deciding set; null means a full deciding set.
+  superTiebreakTo: number | null;
 }
 
 // Record forces a rules entry for every format in MATCH_FORMATS.
 export const FORMAT_RULES: Record<MatchFormatId, ScoringRules> = {
-  best_of_3_sets: { gamesPerSet: 6, tiebreakAt: 6, tiebreakTo: 7, setsToWin: 2 },
+  best_of_3_sets: { gamesPerSet: 6, tiebreakAt: 6, tiebreakTo: 7, setsToWin: 2, superTiebreakTo: null },
+  two_sets_super_tiebreak: { gamesPerSet: 6, tiebreakAt: 6, tiebreakTo: 7, setsToWin: 2, superTiebreakTo: 10 },
+  short_sets: { gamesPerSet: 4, tiebreakAt: 4, tiebreakTo: 7, setsToWin: 2, superTiebreakTo: null },
 };
 
 export interface MatchSetup {
@@ -49,6 +53,8 @@ export interface Score {
 
 export interface SetScore extends Score {
   tiebreak: Score | null;
+  // A super tie-break is recorded as a 1:0 set with its points in `tiebreak`.
+  superTiebreak: boolean;
 }
 
 // One finished game; `set` and `game` count from 1.
@@ -60,6 +66,7 @@ export interface GameRecord {
   winner: Side;
   points: Score;
   tiebreak: boolean;
+  superTiebreak: boolean;
   // True when a game_score was entered in this game.
   manual: boolean;
   // Games in the set after this game.
@@ -71,6 +78,9 @@ export interface MatchState {
   games: Score;
   points: Score;
   inTiebreak: boolean;
+  // Points to win the current tie-break; outside a tie-break the target of a set tie-break.
+  tiebreakTo: number;
+  superTiebreak: boolean;
   server: Side;
   winner: Side | null;
   history: GameRecord[];
@@ -133,6 +143,8 @@ export function replayMatch(setup: MatchSetup, actions: readonly MatchAction[]):
   let points: Score = { player: 0, opponent: 0 };
   // Widened on purpose: closeGame reassigns these, which TS narrowing does not see.
   let inTiebreak = false as boolean;
+  let superTiebreak = false as boolean;
+  let tiebreakTo = rules.tiebreakTo;
   // Server of the current regular game; in a tie-break the order derives from tiebreakStarter.
   let server: Side = setup.firstServer;
   let tiebreakStarter: Side = setup.firstServer;
@@ -143,8 +155,20 @@ export function replayMatch(setup: MatchSetup, actions: readonly MatchAction[]):
 
   // Records the finished set; returns whether it decided the match.
   const closeSet = (setWinner: Side, finalGames: Score, tiebreak: Score | null): boolean => {
-    sets.push({ ...finalGames, tiebreak });
+    sets.push({ ...finalGames, tiebreak, superTiebreak });
     return sets.filter((set) => set[setWinner] > set[other(setWinner)]).length >= rules.setsToWin;
+  };
+
+  // At one set short of the match each, a format with a super tie-break plays it instead of a set.
+  const openSuperTiebreakIfDue = () => {
+    const setsWon = (side: Side) => sets.filter((set) => set[side] > set[other(side)]).length;
+    const oneShort = rules.setsToWin - 1;
+    if (rules.superTiebreakTo !== null && setsWon("player") === oneShort && setsWon("opponent") === oneShort) {
+      inTiebreak = true;
+      superTiebreak = true;
+      tiebreakTo = rules.superTiebreakTo;
+      tiebreakStarter = server;
+    }
   };
 
   // Closes the won game or tie-break, whether it ended on a point or on a game_score.
@@ -156,6 +180,7 @@ export function replayMatch(setup: MatchSetup, actions: readonly MatchAction[]):
       winner: side,
       points,
       tiebreak: inTiebreak,
+      superTiebreak,
       manual,
     };
     games = { ...games, [side]: games[side] + 1 };
@@ -163,14 +188,20 @@ export function replayMatch(setup: MatchSetup, actions: readonly MatchAction[]):
     manual = false;
 
     if (inTiebreak) {
-      if (closeSet(side, games, points)) {
+      const decided = closeSet(side, games, points);
+      if (decided) {
         winner = side;
       }
       games = { player: 0, opponent: 0 };
       points = { player: 0, opponent: 0 };
       inTiebreak = false;
+      superTiebreak = false;
+      tiebreakTo = rules.tiebreakTo;
       // The tie-break counts as one game in the alternation.
       server = other(tiebreakStarter);
+      if (!decided) {
+        openSuperTiebreakIfDue();
+      }
       return;
     }
 
@@ -179,6 +210,8 @@ export function replayMatch(setup: MatchSetup, actions: readonly MatchAction[]):
     if (hasWon(games, side, rules.gamesPerSet, 2)) {
       if (closeSet(side, games, null)) {
         winner = side;
+      } else {
+        openSuperTiebreakIfDue();
       }
       games = { player: 0, opponent: 0 };
     } else if (games.player === rules.tiebreakAt && games.opponent === rules.tiebreakAt) {
@@ -201,7 +234,7 @@ export function replayMatch(setup: MatchSetup, actions: readonly MatchAction[]):
       continue;
     }
 
-    const { target, lead } = gameTarget(inTiebreak, rules.tiebreakTo, setup.withAdvantage);
+    const { target, lead } = gameTarget(inTiebreak, tiebreakTo, setup.withAdvantage);
     if (action.type === "game_score") {
       const score = { player: action.player, opponent: action.opponent };
       if (!isReachableGameScore(score, target, lead)) {
@@ -220,7 +253,20 @@ export function replayMatch(setup: MatchSetup, actions: readonly MatchAction[]):
   }
 
   const currentServer = inTiebreak ? tiebreakServer(tiebreakStarter, points.player + points.opponent) : server;
-  return { ok: true, state: { sets, games, points, inTiebreak, server: currentServer, winner, history } };
+  return {
+    ok: true,
+    state: {
+      sets,
+      games,
+      points,
+      inTiebreak,
+      tiebreakTo,
+      superTiebreak,
+      server: currentServer,
+      winner,
+      history,
+    },
+  };
 }
 
 // Point labels for the current game or tie-break.

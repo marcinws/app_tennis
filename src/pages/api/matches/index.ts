@@ -29,6 +29,8 @@ export const POST: APIRoute = async (context) => {
   const parsedStart = parseMatchStart({
     tournamentName: parsedForm.data.tournament_name,
     format: parsedForm.data.format,
+    // Phase 2 reads with_advantage from the form; until then every match keeps the database default.
+    withAdvantage: "true",
     firstServer: parsedForm.data.first_server,
   });
   if (!parsedStart.ok) {

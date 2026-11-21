@@ -122,14 +122,14 @@ describe("gamePointLabels", () => {
 describe("replayMatch: set", () => {
   it("ends the set at 6:4", () => {
     const state = replay([...evenGames(4), ...games("player", 2)]);
-    expect(state.sets).toEqual([{ player: 6, opponent: 4, tiebreak: null }]);
+    expect(state.sets).toEqual([{ player: 6, opponent: 4, tiebreak: null, superTiebreak: false }]);
     expect(state.games).toEqual({ player: 0, opponent: 0 });
   });
 
   it("goes on from 5:5 to 7:5", () => {
     expect(replay([...evenGames(5), ...games("player", 1)]).games).toEqual({ player: 6, opponent: 5 });
     const state = replay([...evenGames(5), ...games("player", 2)]);
-    expect(state.sets).toEqual([{ player: 7, opponent: 5, tiebreak: null }]);
+    expect(state.sets).toEqual([{ player: 7, opponent: 5, tiebreak: null, superTiebreak: false }]);
   });
 
   it("starts a tie-break at 6:6", () => {
@@ -141,7 +141,9 @@ describe("replayMatch: set", () => {
 
   it("records a 7:5 tie-break as a 7:6 set", () => {
     const state = replay([...evenGames(6), ...points("opponent", 5), ...points("player", 7)]);
-    expect(state.sets).toEqual([{ player: 7, opponent: 6, tiebreak: { player: 7, opponent: 5 } }]);
+    expect(state.sets).toEqual([
+      { player: 7, opponent: 6, tiebreak: { player: 7, opponent: 5 }, superTiebreak: false },
+    ]);
     expect(state.inTiebreak).toBe(false);
     expect(state.games).toEqual({ player: 0, opponent: 0 });
     expect(state.points).toEqual({ player: 0, opponent: 0 });
@@ -151,7 +153,9 @@ describe("replayMatch: set", () => {
     const sixAll = [...evenGames(6), ...points("player", 6), ...points("opponent", 6)];
     expect(replay([...sixAll, ...points("opponent", 1)]).points).toEqual({ player: 6, opponent: 7 });
     const state = replay([...sixAll, ...points("opponent", 2)]);
-    expect(state.sets).toEqual([{ player: 6, opponent: 7, tiebreak: { player: 6, opponent: 8 } }]);
+    expect(state.sets).toEqual([
+      { player: 6, opponent: 7, tiebreak: { player: 6, opponent: 8 }, superTiebreak: false },
+    ]);
   });
 });
 
@@ -160,8 +164,8 @@ describe("replayMatch: match", () => {
     const state = replay(games("opponent", 12));
     expect(state.winner).toBe("opponent");
     expect(state.sets).toEqual([
-      { player: 0, opponent: 6, tiebreak: null },
-      { player: 0, opponent: 6, tiebreak: null },
+      { player: 0, opponent: 6, tiebreak: null, superTiebreak: false },
+      { player: 0, opponent: 6, tiebreak: null, superTiebreak: false },
     ]);
   });
 
@@ -386,7 +390,7 @@ describe("replayMatch: game_score", () => {
 
   it("closes the set with a game-ending entry at 5:4", () => {
     const state = replay([...evenGames(4), ...games("player", 1), gameScore(4, 1)]);
-    expect(state.sets).toEqual([{ player: 6, opponent: 4, tiebreak: null }]);
+    expect(state.sets).toEqual([{ player: 6, opponent: 4, tiebreak: null, superTiebreak: false }]);
     expect(state.games).toEqual({ player: 0, opponent: 0 });
   });
 
@@ -399,7 +403,9 @@ describe("replayMatch: game_score", () => {
 
   it("closes the set 7:6 with a won tie-break entry", () => {
     const state = replay([...evenGames(6), gameScore(7, 5)]);
-    expect(state.sets).toEqual([{ player: 7, opponent: 6, tiebreak: { player: 7, opponent: 5 } }]);
+    expect(state.sets).toEqual([
+      { player: 7, opponent: 6, tiebreak: { player: 7, opponent: 5 }, superTiebreak: false },
+    ]);
     expect(state.inTiebreak).toBe(false);
     expect(state.server).toBe("opponent");
   });
@@ -412,7 +418,12 @@ describe("replayMatch: game_score", () => {
   it("decides the match with an entry ending the deciding set", () => {
     const state = replay([...games("player", 6), ...games("opponent", 6), ...evenGames(6), gameScore(3, 7)]);
     expect(state.winner).toBe("opponent");
-    expect(state.sets[2]).toEqual({ player: 6, opponent: 7, tiebreak: { player: 3, opponent: 7 } });
+    expect(state.sets[2]).toEqual({
+      player: 6,
+      opponent: 7,
+      tiebreak: { player: 3, opponent: 7 },
+      superTiebreak: false,
+    });
   });
 
   it("rejects game_score after the match end", () => {
@@ -442,6 +453,7 @@ describe("replayMatch: history", () => {
         winner: "player",
         points: { player: 4, opponent: 0 },
         tiebreak: false,
+        superTiebreak: false,
         manual: false,
         setScore: { player: 1, opponent: 0 },
       },
@@ -452,6 +464,7 @@ describe("replayMatch: history", () => {
         winner: "opponent",
         points: { player: 2, opponent: 4 },
         tiebreak: false,
+        superTiebreak: false,
         manual: false,
         setScore: { player: 1, opponent: 1 },
       },
@@ -480,6 +493,7 @@ describe("replayMatch: history", () => {
       winner: "player",
       points: { player: 7, opponent: 5 },
       tiebreak: true,
+      superTiebreak: false,
       manual: false,
       setScore: { player: 7, opponent: 6 },
     });
@@ -526,5 +540,134 @@ describe("sameActions and extendsActions: game_score", () => {
     expect(sameActions([gameScore(3, 2)], [gameScore(3, 1)])).toBe(false);
     expect(extendsActions([gameScore(3, 2)], [gameScore(3, 2), switchServer])).toBe(true);
     expect(extendsActions([gameScore(3, 2)], [gameScore(4, 2), switchServer])).toBe(false);
+  });
+});
+
+const shortSets: MatchSetup = { ...setup, format: "short_sets" };
+const superTiebreak: MatchSetup = { ...setup, format: "two_sets_super_tiebreak" };
+// 1:1 in sets after 24 games, so the player serves next.
+const setAll: MatchAction[] = [...games("player", 6), ...games("opponent", 6)];
+
+describe("replayMatch: short sets", () => {
+  it("ends the set at 4:0", () => {
+    const state = replay(games("player", 4), shortSets);
+    expect(state.sets).toEqual([{ player: 4, opponent: 0, tiebreak: null, superTiebreak: false }]);
+  });
+
+  it("goes on from 4:3 and ends the set at 5:3", () => {
+    expect(replay([...evenGames(3), ...games("player", 1)], shortSets).sets).toEqual([]);
+    const state = replay([...evenGames(3), ...games("player", 2)], shortSets);
+    expect(state.sets).toEqual([{ player: 5, opponent: 3, tiebreak: null, superTiebreak: false }]);
+  });
+
+  it("starts a tie-break to 7 at 4:4", () => {
+    const state = replay(evenGames(4), shortSets);
+    expect(state).toMatchObject({ inTiebreak: true, tiebreakTo: 7, superTiebreak: false });
+    const won = replay([...evenGames(4), ...points("player", 7)], shortSets);
+    expect(won.sets).toEqual([{ player: 5, opponent: 4, tiebreak: { player: 7, opponent: 0 }, superTiebreak: false }]);
+  });
+
+  it("ends the match after 2 sets", () => {
+    const state = replay(games("player", 8), shortSets);
+    expect(state.winner).toBe("player");
+    expect(state.sets).toHaveLength(2);
+  });
+
+  it("ends the game on the point after 3:3 without advantage", () => {
+    const state = replay([...deuce, ...points("player", 1)], { ...shortSets, withAdvantage: false });
+    expect(state.games).toEqual({ player: 1, opponent: 0 });
+  });
+});
+
+describe("replayMatch: super tie-break", () => {
+  it("starts instead of a third set at 1:1", () => {
+    const state = replay(setAll, superTiebreak);
+    expect(state).toMatchObject({ inTiebreak: true, superTiebreak: true, tiebreakTo: 10, winner: null });
+    expect(state.games).toEqual({ player: 0, opponent: 0 });
+    expect(state.server).toBe("player");
+  });
+
+  it("is served first by the next server in the rotation", () => {
+    // 7:5 and 3:6 take 21 games served P, O, ..., P, so the opponent serves next.
+    const actions = [...evenGames(5), ...games("player", 2), ...evenGames(3), ...games("opponent", 3)];
+    const order = [0, 1, 2, 3].map((count) => replay([...actions, ...points("player", count)], superTiebreak).server);
+    expect(order).toEqual(["opponent", "player", "player", "opponent"]);
+  });
+
+  it("follows a second set decided in a tie-break", () => {
+    // The set tie-break is started by the player, so the opponent serves the super tie-break first.
+    const state = replay([...games("player", 6), ...evenGames(6), ...points("opponent", 7)], superTiebreak);
+    expect(state).toMatchObject({ inTiebreak: true, superTiebreak: true, server: "opponent" });
+  });
+
+  it("goes on at 9:9 and 10:9", () => {
+    const nineAll = [...setAll, ...points("player", 9), ...points("opponent", 9)];
+    expect(replay(nineAll, superTiebreak).winner).toBeNull();
+    const state = replay([...nineAll, ...points("player", 1)], superTiebreak);
+    expect(state.winner).toBeNull();
+    expect(state.points).toEqual({ player: 10, opponent: 9 });
+  });
+
+  it.each([
+    [10, 8],
+    [11, 9],
+  ])("ends the match at %i:%i", (won, lost) => {
+    const state = replay(
+      [...setAll, ...points("player", lost), ...points("opponent", lost), ...points("player", won - lost)],
+      superTiebreak,
+    );
+    expect(state.winner).toBe("player");
+    expect(state.inTiebreak).toBe(false);
+    expect(state.superTiebreak).toBe(false);
+    expect(state.sets[2]).toEqual({
+      player: 1,
+      opponent: 0,
+      tiebreak: { player: won, opponent: lost },
+      superTiebreak: true,
+    });
+  });
+
+  it("rejects an action after it ends the match", () => {
+    const actions = [...setAll, ...points("opponent", 10), ...points("player", 1)];
+    expect(replayMatch(superTiebreak, actions)).toEqual({ ok: false, error: "action_after_match_end", index: 58 });
+  });
+
+  it("is not played at 2:0 in sets", () => {
+    const state = replay(games("player", 12), superTiebreak);
+    expect(state.winner).toBe("player");
+    expect(state.sets).toHaveLength(2);
+    expect(state.superTiebreak).toBe(false);
+  });
+
+  it("is not played in a format with a full deciding set", () => {
+    const state = replay(setAll);
+    expect(state).toMatchObject({ inTiebreak: false, superTiebreak: false, tiebreakTo: 7 });
+  });
+
+  it("validates game_score against a target of 10", () => {
+    const inProgress = replay([...setAll, gameScore(7, 5)], superTiebreak);
+    expect(inProgress).toMatchObject({ winner: null, inTiebreak: true, points: { player: 7, opponent: 5 } });
+    expect(replay([...setAll, gameScore(10, 8)], superTiebreak).winner).toBe("player");
+    expect(replayMatch(superTiebreak, [...setAll, gameScore(11, 8)])).toEqual({
+      ok: false,
+      error: "invalid_game_score",
+      index: 48,
+    });
+  });
+
+  it("flips the starter on switch_server and records it in history", () => {
+    expect(replay([...setAll, switchServer], superTiebreak).server).toBe("opponent");
+    const state = replay([...setAll, switchServer, ...points("opponent", 10)], superTiebreak);
+    expect(state.history.at(-1)).toEqual({
+      set: 3,
+      game: 1,
+      server: "opponent",
+      winner: "opponent",
+      points: { player: 0, opponent: 10 },
+      tiebreak: true,
+      superTiebreak: true,
+      manual: false,
+      setScore: { player: 0, opponent: 1 },
+    });
   });
 });

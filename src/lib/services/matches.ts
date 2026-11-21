@@ -1,6 +1,10 @@
 // Ids must equal the `check` values on matches.format
 // (supabase/migrations/20261117140000_create_matches.sql).
-export const MATCH_FORMATS = [{ id: "best_of_3_sets", label: "Do 2 wygranych setów, tie-break przy 6:6" }] as const;
+export const MATCH_FORMATS = [
+  { id: "best_of_3_sets", label: "Do 2 wygranych setów, tie-break przy 6:6" },
+  { id: "two_sets_super_tiebreak", label: "2 sety, przy 1:1 super tie-break do 10" },
+  { id: "short_sets", label: "Krótkie sety do 4 gemów, tie-break przy 4:4" },
+] as const;
 
 export type MatchFormatId = (typeof MATCH_FORMATS)[number]["id"];
 
@@ -18,6 +22,7 @@ export const MATCH_ERROR_MESSAGES = {
   tournament_too_long: `Nazwa turnieju może mieć najwyżej ${TOURNAMENT_NAME_MAX_LENGTH} znaków`,
   format_invalid: "Wybierz format meczu",
   first_server_invalid: "Wskaż, kto serwuje pierwszy",
+  advantage_invalid: "Wybierz, czy gemy są z przewagami",
   not_configured: "Supabase nie jest skonfigurowany",
 } as const;
 
@@ -28,6 +33,7 @@ export type ParseTournamentNameResult = { ok: true; name: string | null } | { ok
 export interface MatchStart {
   tournamentName: string | null;
   format: MatchFormatId;
+  withAdvantage: boolean;
   firstServer: FirstServer;
 }
 
@@ -58,6 +64,8 @@ function isFirstServer(value: string): value is FirstServer {
 export function parseMatchStart(input: {
   tournamentName: string;
   format: string;
+  // Radio value from the form: "true" or "false".
+  withAdvantage: string;
   firstServer: string;
 }): ParseMatchStartResult {
   const tournament = parseTournamentName(input.tournamentName);
@@ -67,12 +75,20 @@ export function parseMatchStart(input: {
   if (!isMatchFormatId(input.format)) {
     return { ok: false, error: "format_invalid" };
   }
+  if (input.withAdvantage !== "true" && input.withAdvantage !== "false") {
+    return { ok: false, error: "advantage_invalid" };
+  }
   if (!isFirstServer(input.firstServer)) {
     return { ok: false, error: "first_server_invalid" };
   }
   return {
     ok: true,
-    value: { tournamentName: tournament.name, format: input.format, firstServer: input.firstServer },
+    value: {
+      tournamentName: tournament.name,
+      format: input.format,
+      withAdvantage: input.withAdvantage === "true",
+      firstServer: input.firstServer,
+    },
   };
 }
 
