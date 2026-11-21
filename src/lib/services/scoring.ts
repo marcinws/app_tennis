@@ -80,7 +80,7 @@ export type ReplayMatchResult =
   | { ok: true; state: MatchState }
   | { ok: false; error: "action_after_match_end" | "invalid_game_score"; index: number };
 
-function other(side: Side): Side {
+export function other(side: Side): Side {
   return side === "player" ? "opponent" : "player";
 }
 
@@ -99,6 +99,15 @@ function isInProgress(score: Score, target: number, lead: 1 | 2): boolean {
   }
   const belowTarget = score.player <= target - 1 && score.opponent <= target - 1;
   return belowTarget || (lead === 2 && Math.abs(score.player - score.opponent) <= 1);
+}
+
+// Points to win the current game or tie-break and the lead it needs.
+export function gameTarget(
+  inTiebreak: boolean,
+  tiebreakTo: number,
+  withAdvantage: boolean,
+): { target: number; lead: 1 | 2 } {
+  return inTiebreak ? { target: tiebreakTo, lead: 2 } : { target: 4, lead: withAdvantage ? 2 : 1 };
 }
 
 // Whether a game (or tie-break) to `target` with the required `lead` can stand at `score`:
@@ -192,8 +201,7 @@ export function replayMatch(setup: MatchSetup, actions: readonly MatchAction[]):
       continue;
     }
 
-    const target = inTiebreak ? rules.tiebreakTo : 4;
-    const lead = inTiebreak || setup.withAdvantage ? 2 : 1;
+    const { target, lead } = gameTarget(inTiebreak, rules.tiebreakTo, setup.withAdvantage);
     if (action.type === "game_score") {
       const score = { player: action.player, opponent: action.opponent };
       if (!isReachableGameScore(score, target, lead)) {

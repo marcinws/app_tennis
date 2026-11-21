@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  gameTarget,
   isReachableGameScore,
   type MatchAction,
   type MatchState,
   MAX_GAME_SCORE_POINTS,
+  other,
   pointLabel,
   type Score,
   type Side,
@@ -12,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 
 interface Props {
+  id: string;
   state: MatchState;
   withAdvantage: boolean;
   tiebreakTo: number;
@@ -26,10 +29,6 @@ const SIDES = ["player", "opponent"] as const;
 // Regular game choices as point counts; 4 stands for AD.
 const LOSER_CHOICES = [0, 1, 2, 3] as const;
 const AD = 4;
-
-function other(side: Side): Side {
-  return side === "player" ? "opponent" : "player";
-}
 
 // Score with `side` at `points` and the other side at `rivalPoints`.
 function scoreFor(side: Side, points: number, rivalPoints: number): Score {
@@ -75,15 +74,15 @@ function ChoiceButton({ selected, onClick, children }: { selected: boolean; onCl
   );
 }
 
-export default function ManualGameScore({ state, withAdvantage, tiebreakTo, names, onSave, onCancel }: Props) {
+export default function ManualGameScore({ id, state, withAdvantage, tiebreakTo, names, onSave, onCancel }: Props) {
+  const labelId = useId();
   const [mode, setMode] = useState<Mode>("progress");
   const [progress, setProgress] = useState<Score>(() => initialProgress(state.points));
   const [gameWinner, setGameWinner] = useState<Side | null>(null);
   const [loserPoints, setLoserPoints] = useState(0);
   const [tiebreak, setTiebreak] = useState<Score>(state.points);
 
-  const target = state.inTiebreak ? tiebreakTo : 4;
-  const lead = state.inTiebreak || withAdvantage ? 2 : 1;
+  const { target, lead } = gameTarget(state.inTiebreak, tiebreakTo, withAdvantage);
 
   let score: Score | null;
   let description: string;
@@ -114,7 +113,12 @@ export default function ManualGameScore({ state, withAdvantage, tiebreakTo, name
   const canSave = score !== null && isReachableGameScore(score, target, lead);
 
   return (
-    <div className="space-y-4 rounded-md border border-white/20 bg-white/5 p-3">
+    <div
+      id={id}
+      role="group"
+      aria-label="Wpisz wynik gema"
+      className="space-y-4 rounded-md border border-white/20 bg-white/5 p-3"
+    >
       {state.inTiebreak ? (
         <div className="space-y-3">
           {SIDES.map((side) => (
@@ -150,7 +154,7 @@ export default function ManualGameScore({ state, withAdvantage, tiebreakTo, name
         </div>
       ) : (
         <>
-          <div className="flex gap-2">
+          <div role="group" aria-label="Stan gema" className="flex gap-2">
             <ChoiceButton
               selected={mode === "progress"}
               onClick={() => {
@@ -166,6 +170,8 @@ export default function ManualGameScore({ state, withAdvantage, tiebreakTo, name
                 onClick={() => {
                   setMode("won");
                   setGameWinner(side);
+                  // Start from the loser's current score, so two taps do not drop their points.
+                  setLoserPoints(Math.min(state.points[other(side)], 3));
                 }}
               >
                 {`Gem dla ${names[side]}`}
@@ -176,8 +182,10 @@ export default function ManualGameScore({ state, withAdvantage, tiebreakTo, name
           {mode === "progress" ? (
             SIDES.map((side) => (
               <div key={side} className="space-y-1">
-                <p className="truncate text-sm text-blue-100/80">{names[side]}</p>
-                <div className="flex gap-2">
+                <p id={`${labelId}-${side}`} className="truncate text-sm text-blue-100/80">
+                  {names[side]}
+                </p>
+                <div role="group" aria-labelledby={`${labelId}-${side}`} className="flex gap-2">
                   {(withAdvantage ? [...LOSER_CHOICES, AD] : LOSER_CHOICES).map((points) => (
                     <ChoiceButton
                       key={points}
@@ -194,10 +202,10 @@ export default function ManualGameScore({ state, withAdvantage, tiebreakTo, name
             ))
           ) : (
             <div className="space-y-1">
-              <p className="truncate text-sm text-blue-100/80">
+              <p id={`${labelId}-loser`} className="truncate text-sm text-blue-100/80">
                 {gameWinner === null ? "Wynik przegranego" : `Wynik: ${names[other(gameWinner)]}`}
               </p>
-              <div className="flex gap-2">
+              <div role="group" aria-labelledby={`${labelId}-loser`} className="flex gap-2">
                 {LOSER_CHOICES.map((points) => (
                   <ChoiceButton
                     key={points}
