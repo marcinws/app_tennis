@@ -88,14 +88,15 @@ export default function ManualGameScore({ id, state, withAdvantage, tiebreakTo, 
   let description: string;
   if (state.inTiebreak) {
     score = tiebreak;
+    const tiebreakName = state.superTiebreak ? "Super tie-break" : "Tie-break";
     const leader = score.player > score.opponent ? "player" : "opponent";
     const won = Math.max(score.player, score.opponent) >= target && Math.abs(score.player - score.opponent) >= 2;
     if (!isReachableGameScore(score, target, lead)) {
-      description = `Wynik niemożliwy w tie-breaku do ${target}`;
+      description = `Wynik niemożliwy: ${tiebreakName.toLowerCase()} do ${target}`;
     } else if (won) {
-      description = `Tie-break dla ${names[leader]}, ${score[leader]}:${score[other(leader)]}`;
+      description = `${tiebreakName} dla ${names[leader]}, ${score[leader]}:${score[other(leader)]}`;
     } else {
-      description = `Tie-break w trakcie, ${score.player}:${score.opponent}`;
+      description = `${tiebreakName} w trakcie, ${score.player}:${score.opponent}`;
     }
   } else if (mode === "progress") {
     score = progress;

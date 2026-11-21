@@ -545,7 +545,7 @@ describe("sameActions and extendsActions: game_score", () => {
 
 const shortSets: MatchSetup = { ...setup, format: "short_sets" };
 const superTiebreak: MatchSetup = { ...setup, format: "two_sets_super_tiebreak" };
-// 1:1 in sets after 24 games, so the player serves next.
+// 1:1 in sets after 12 games, so the player serves next.
 const setAll: MatchAction[] = [...games("player", 6), ...games("opponent", 6)];
 
 describe("replayMatch: short sets", () => {
