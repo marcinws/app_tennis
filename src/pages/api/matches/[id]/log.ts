@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase";
 import { type FirstServer, isMatchFormatId } from "@/lib/services/matches";
 import { extendsActions, parseMatchActions, replayMatch, sameActions } from "@/lib/services/scoring";
 
-// The largest valid log (2000 actions) is about 72 KB; anything far above it is not worth parsing.
+// The largest valid log (2000 actions) is about 96 KB; anything far above it is not worth parsing.
 const MAX_BODY_BYTES = 131_072;
 
 const matchIdSchema = z.uuid();

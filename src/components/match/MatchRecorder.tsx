@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useMatchLog, type MatchLogStatus } from "@/components/hooks/useMatchLog";
 import GameList from "@/components/match/GameList";
@@ -84,6 +84,13 @@ export default function MatchRecorder({
   const canScore = ready && state !== null && !finished && conflict === null && !atLimit;
   const message = statusText(status);
   const [panelOpen, setPanelOpen] = useState(false);
+  const panelId = useId();
+  const panelButton = useRef<HTMLButtonElement>(null);
+  // The panel unmounts with focus inside it, so focus goes back to the button that opened it.
+  const closePanel = () => {
+    setPanelOpen(false);
+    panelButton.current?.focus();
+  };
   // A conflict or the match end closes the panel for good, not just while it lasts.
   if (panelOpen && !canScore) {
     setPanelOpen(false);
@@ -212,7 +219,9 @@ export default function MatchRecorder({
           type="button"
           variant="outline"
           className="text-foreground min-h-12 w-full whitespace-normal"
+          ref={panelButton}
           aria-expanded={panelOpen}
+          aria-controls={panelId}
           disabled={!canScore}
           onClick={() => {
             setPanelOpen(!panelOpen);
@@ -226,17 +235,16 @@ export default function MatchRecorder({
         <ManualGameScore
           // A new action changes the current score, so the panel starts again from it.
           key={actions.length}
+          id={panelId}
           state={state}
           withAdvantage={withAdvantage}
           tiebreakTo={FORMAT_RULES[format].tiebreakTo}
           names={names}
           onSave={(action) => {
             record(action);
-            setPanelOpen(false);
+            closePanel();
           }}
-          onCancel={() => {
-            setPanelOpen(false);
-          }}
+          onCancel={closePanel}
         />
       )}
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   extendsActions,
   gamePointLabels,
+  gameTarget,
   isReachableGameScore,
   type MatchAction,
   type MatchSetup,
@@ -313,6 +314,17 @@ describe("extendsActions", () => {
 function gameScore(player: number, opponent: number): MatchAction {
   return { type: "game_score", player, opponent };
 }
+
+describe("gameTarget", () => {
+  it("gives a regular game 4 points with a lead of 2, or 1 without advantage", () => {
+    expect(gameTarget(false, 7, true)).toEqual({ target: 4, lead: 2 });
+    expect(gameTarget(false, 7, false)).toEqual({ target: 4, lead: 1 });
+  });
+
+  it("gives a tie-break its own target with a lead of 2, with or without advantage", () => {
+    expect(gameTarget(true, 7, false)).toEqual({ target: 7, lead: 2 });
+  });
+});
 
 describe("isReachableGameScore", () => {
   it.each<[string, number, 1 | 2, string[], boolean]>([
