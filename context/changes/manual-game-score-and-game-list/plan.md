@@ -292,10 +292,10 @@ Brak migracji. Istniejące przebiegi mają tylko akcje `point` i `switch_server`
 
 #### Automated
 
-- [x] 2.1 Testy przechodzą: `npm test`
-- [x] 2.2 Lint przechodzi: `npm run lint`
-- [x] 2.3 Typy przechodzą: `npx astro check`
-- [x] 2.4 Build przechodzi: `npm run build`
+- [x] 2.1 Testy przechodzą: `npm test` — d5dada4
+- [x] 2.2 Lint przechodzi: `npm run lint` — d5dada4
+- [x] 2.3 Typy przechodzą: `npx astro check` — d5dada4
+- [x] 2.4 Build przechodzi: `npm run build` — d5dada4
 
 #### Manual
 
@@ -307,7 +307,7 @@ Brak migracji. Istniejące przebiegi mają tylko akcje `point` i `switch_server`
 
 #### Automated
 
-- [ ] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
+- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
 - [ ] 3.2 CI na PR zielone, w tym oba nowe kroki smoke
 - [ ] 3.3 Po merge job `deploy` i smoke produkcyjny zielone
 
