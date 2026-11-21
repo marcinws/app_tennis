@@ -1,8 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useMatchLog, type MatchLogStatus } from "@/components/hooks/useMatchLog";
+import GameList from "@/components/match/GameList";
+import ManualGameScore from "@/components/match/ManualGameScore";
 import type { MatchFormatId } from "@/lib/services/matches";
-import { gamePointLabels, MAX_MATCH_ACTIONS, type MatchAction, replayMatch, type Side } from "@/lib/services/scoring";
+import {
+  FORMAT_RULES,
+  gamePointLabels,
+  MAX_MATCH_ACTIONS,
+  type MatchAction,
+  replayMatch,
+  type Side,
+} from "@/lib/services/scoring";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -74,6 +83,11 @@ export default function MatchRecorder({
   // During a conflict the user must choose a version before recording anything.
   const canScore = ready && state !== null && !finished && conflict === null && !atLimit;
   const message = statusText(status);
+  const [panelOpen, setPanelOpen] = useState(false);
+  // A conflict or the match end closes the panel for good, not just while it lasts.
+  if (panelOpen && !canScore) {
+    setPanelOpen(false);
+  }
 
   return (
     <section aria-label="Zapis meczu" className="mb-8 space-y-4">
@@ -134,8 +148,11 @@ export default function MatchRecorder({
       ) : (
         <p role="alert" className="rounded-md border border-red-300/40 bg-red-500/20 p-3 text-sm">
           Nie można odtworzyć wyniku z zapisu na telefonie
-          {!replay.ok && ` (akcja nr ${replay.index + 1} po zakończeniu meczu)`}. Cofnij ostatnie akcje albo wczytaj
-          mecz ponownie.
+          {!replay.ok &&
+            (replay.error === "invalid_game_score"
+              ? ` (akcja nr ${replay.index + 1}: wynik gema niezgodny z formatem)`
+              : ` (akcja nr ${replay.index + 1} po zakończeniu meczu)`)}
+          . Cofnij ostatnie akcje albo wczytaj mecz ponownie.
         </p>
       )}
 
@@ -170,7 +187,7 @@ export default function MatchRecorder({
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <Button
           type="button"
           variant="outline"
@@ -191,7 +208,37 @@ export default function MatchRecorder({
         >
           Zmień serwującego
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="text-foreground min-h-12 w-full whitespace-normal"
+          aria-expanded={panelOpen}
+          disabled={!canScore}
+          onClick={() => {
+            setPanelOpen(!panelOpen);
+          }}
+        >
+          Wpisz wynik gema
+        </Button>
       </div>
+
+      {panelOpen && state && (
+        <ManualGameScore
+          // A new action changes the current score, so the panel starts again from it.
+          key={actions.length}
+          state={state}
+          withAdvantage={withAdvantage}
+          tiebreakTo={FORMAT_RULES[format].tiebreakTo}
+          names={names}
+          onSave={(action) => {
+            record(action);
+            setPanelOpen(false);
+          }}
+          onCancel={() => {
+            setPanelOpen(false);
+          }}
+        />
+      )}
 
       {atLimit && <p className="text-sm text-yellow-200">Osiągnięto limit akcji w meczu</p>}
 
@@ -211,6 +258,8 @@ export default function MatchRecorder({
           </div>
         </div>
       )}
+
+      {state && <GameList history={state.history} names={names} withAdvantage={withAdvantage} />}
 
       <p
         role="status"

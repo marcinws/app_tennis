@@ -282,20 +282,20 @@ Brak migracji. Istniejące przebiegi mają tylko akcje `point` i `switch_server`
 
 #### Automated
 
-- [x] 1.1 Testy przechodzą: `npm test`
-- [x] 1.2 Celowe zepsucie reguły osiągalności daje czerwony test; zmiana cofnięta
-- [x] 1.3 Celowe pominięcie zmiany serwującego po ręcznym gemie daje czerwony test; zmiana cofnięta
-- [x] 1.4 Lint przechodzi: `npm run lint`
-- [x] 1.5 Typy przechodzą: `npx astro check`
+- [x] 1.1 Testy przechodzą: `npm test` — 1fe8202
+- [x] 1.2 Celowe zepsucie reguły osiągalności daje czerwony test; zmiana cofnięta — 1fe8202
+- [x] 1.3 Celowe pominięcie zmiany serwującego po ręcznym gemie daje czerwony test; zmiana cofnięta — 1fe8202
+- [x] 1.4 Lint przechodzi: `npm run lint` — 1fe8202
+- [x] 1.5 Typy przechodzą: `npx astro check` — 1fe8202
 
 ### Phase 2: Panel ręcznego wyniku i lista gemów
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Typy przechodzą: `npx astro check`
-- [ ] 2.4 Build przechodzi: `npm run build`
+- [x] 2.1 Testy przechodzą: `npm test`
+- [x] 2.2 Lint przechodzi: `npm run lint`
+- [x] 2.3 Typy przechodzą: `npx astro check`
+- [x] 2.4 Build przechodzi: `npm run build`
 
 #### Manual
 
