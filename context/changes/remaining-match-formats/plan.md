@@ -235,19 +235,19 @@ Migracja addytywna: rozszerza `check` i dodaje uprawnienie. Poprzednia wersja Wo
 
 #### Manual
 
-- [ ] 2.5 Na telefonie: super tie-break przy 1:1 w setach, do 10, kończy mecz
-- [ ] 2.6 Na telefonie: krótkie sety bez przewag — punkt przy 40:40 kończy gem, set przy 4 gemach
+- [x] 2.5 Na telefonie: super tie-break przy 1:1 w setach, do 10, kończy mecz — 980e788
+- [x] 2.6 Na telefonie: krótkie sety bez przewag — punkt przy 40:40 kończy gem, set przy 4 gemach — 980e788
 
 ### Phase 3: Smoke i wdrożenie
 
 #### Automated
 
-- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
-- [ ] 3.2 CI na PR zielone, w tym nowe kroki smoke
+- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs` — 72264d1
+- [x] 3.2 CI na PR zielone, w tym nowe kroki smoke — ad78830
 
 #### Manual
 
-- [ ] 3.3 `npx supabase db push` na produkcji przed merge
-- [ ] 3.4 Po merge job `deploy` i smoke produkcyjny zielone
-- [ ] 3.5 Na telefonie na produkcji: start meczu w każdym formacie, z przewagami i bez
-- [ ] 3.6 Dziennik wdrożeń uzupełniony
+- [x] 3.3 `npx supabase db push` na produkcji przed merge — ad78830
+- [x] 3.4 Po merge job `deploy` i smoke produkcyjny zielone — ad78830
+- [x] 3.5 Na telefonie na produkcji: start meczu w każdym formacie, z przewagami i bez — ad78830
+- [x] 3.6 Dziennik wdrożeń uzupełniony — ad78830
