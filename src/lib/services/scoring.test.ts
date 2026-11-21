@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   extendsActions,
   gamePointLabels,
+  isReachableGameScore,
   type MatchAction,
   type MatchSetup,
   type MatchState,
@@ -306,5 +307,212 @@ describe("extendsActions", () => {
   it("rejects a sent log that differs in the middle", () => {
     const sent = [...points("player", 1), ...points("opponent", 1), switchServer, ...points("player", 1)];
     expect(extendsActions(log, sent)).toBe(false);
+  });
+});
+
+function gameScore(player: number, opponent: number): MatchAction {
+  return { type: "game_score", player, opponent };
+}
+
+describe("isReachableGameScore", () => {
+  it.each<[string, number, 1 | 2, string[], boolean]>([
+    ["in progress with advantage", 4, 2, ["3:2", "3:3", "4:3", "4:4", "6:5"], true],
+    ["won with advantage", 4, 2, ["4:0", "4:2", "5:3"], true],
+    ["past the end with advantage", 4, 2, ["5:0", "5:2", "6:3"], false],
+    ["in progress or won without advantage", 4, 1, ["3:3", "4:3"], true],
+    ["past the end without advantage", 4, 1, ["4:4", "5:3"], false],
+    ["in progress or won in a tie-break", 7, 2, ["6:6", "8:7", "7:5", "9:7"], true],
+    ["past the end in a tie-break", 7, 2, ["8:5"], false],
+  ])("%s", (_name, target, lead, scores, expected) => {
+    for (const [player, opponent] of scores.map((score) => score.split(":").map(Number))) {
+      expect(isReachableGameScore({ player, opponent }, target, lead), `${player}:${opponent}`).toBe(expected);
+      expect(isReachableGameScore({ player: opponent, opponent: player }, target, lead), `${opponent}:${player}`).toBe(
+        expected,
+      );
+    }
+  });
+
+  it.each([
+    [-1, 0],
+    [1.5, 0],
+  ])("rejects %s:%s", (player, opponent) => {
+    expect(isReachableGameScore({ player, opponent }, 4, 2)).toBe(false);
+  });
+});
+
+describe("replayMatch: game_score", () => {
+  it("keeps an in-progress game open with the same server", () => {
+    const state = replay([...points("player", 1), gameScore(3, 2)]);
+    expect(state.points).toEqual({ player: 3, opponent: 2 });
+    expect(gamePointLabels(state, true)).toEqual({ player: "40", opponent: "30" });
+    expect(state.games).toEqual({ player: 0, opponent: 0 });
+    expect(state.server).toBe("player");
+  });
+
+  it("closes a won game and changes the server", () => {
+    const state = replay([gameScore(4, 2)]);
+    expect(state.games).toEqual({ player: 1, opponent: 0 });
+    expect(state.points).toEqual({ player: 0, opponent: 0 });
+    expect(state.server).toBe("opponent");
+  });
+
+  it("labels entered scores past deuce", () => {
+    expect(gamePointLabels(replay([gameScore(4, 3)]), true)).toEqual({ player: "AD", opponent: "40" });
+    expect(gamePointLabels(replay([gameScore(6, 5)]), true)).toEqual({ player: "AD", opponent: "40" });
+    expect(gamePointLabels(replay([gameScore(5, 6)]), true)).toEqual({ player: "40", opponent: "AD" });
+  });
+
+  it("follows the format without advantage", () => {
+    expect(replay([gameScore(4, 3)], noAdvantage).games).toEqual({ player: 1, opponent: 0 });
+    const actions = [...points("player", 1), gameScore(4, 4)];
+    expect(replayMatch(noAdvantage, actions)).toEqual({ ok: false, error: "invalid_game_score", index: 1 });
+  });
+
+  it("rejects a score the game would have ended before", () => {
+    expect(replayMatch(setup, [gameScore(6, 3)])).toEqual({ ok: false, error: "invalid_game_score", index: 0 });
+  });
+
+  it("closes the set with a game-ending entry at 5:4", () => {
+    const state = replay([...evenGames(4), ...games("player", 1), gameScore(4, 1)]);
+    expect(state.sets).toEqual([{ player: 6, opponent: 4, tiebreak: null }]);
+    expect(state.games).toEqual({ player: 0, opponent: 0 });
+  });
+
+  it("serves a tie-break entry as after the same number of points", () => {
+    const entered = replay([...evenGames(6), gameScore(5, 3)]);
+    const played = replay([...evenGames(6), ...points("player", 5), ...points("opponent", 3)]);
+    expect(entered.inTiebreak).toBe(true);
+    expect(entered.server).toBe(played.server);
+  });
+
+  it("closes the set 7:6 with a won tie-break entry", () => {
+    const state = replay([...evenGames(6), gameScore(7, 5)]);
+    expect(state.sets).toEqual([{ player: 7, opponent: 6, tiebreak: { player: 7, opponent: 5 } }]);
+    expect(state.inTiebreak).toBe(false);
+    expect(state.server).toBe("opponent");
+  });
+
+  it("rejects a tie-break score past its end", () => {
+    const actions = [...evenGames(6), gameScore(8, 5)];
+    expect(replayMatch(setup, actions)).toEqual({ ok: false, error: "invalid_game_score", index: 48 });
+  });
+
+  it("decides the match with an entry ending the deciding set", () => {
+    const state = replay([...games("player", 6), ...games("opponent", 6), ...evenGames(6), gameScore(3, 7)]);
+    expect(state.winner).toBe("opponent");
+    expect(state.sets[2]).toEqual({ player: 6, opponent: 7, tiebreak: { player: 3, opponent: 7 } });
+  });
+
+  it("rejects game_score after the match end", () => {
+    const actions = [...games("player", 12), gameScore(1, 0)];
+    expect(replayMatch(setup, actions)).toEqual({ ok: false, error: "action_after_match_end", index: 48 });
+  });
+
+  it("restores the previous state when the entry is dropped", () => {
+    const before = [...games("player", 1), ...points("opponent", 1)];
+    expect(replay([...before, gameScore(3, 2)].slice(0, -1))).toEqual(replay(before));
+    expect(replay([...before, gameScore(4, 2)].slice(0, -1))).toEqual(replay(before));
+  });
+});
+
+describe("replayMatch: history", () => {
+  it("starts empty", () => {
+    expect(replay([]).history).toEqual([]);
+  });
+
+  it("records games won on points", () => {
+    const state = replay([...games("player", 1), ...points("player", 2), ...points("opponent", 4)]);
+    expect(state.history).toEqual([
+      {
+        set: 1,
+        game: 1,
+        server: "player",
+        winner: "player",
+        points: { player: 4, opponent: 0 },
+        tiebreak: false,
+        manual: false,
+        setScore: { player: 1, opponent: 0 },
+      },
+      {
+        set: 1,
+        game: 2,
+        server: "opponent",
+        winner: "opponent",
+        points: { player: 2, opponent: 4 },
+        tiebreak: false,
+        manual: false,
+        setScore: { player: 1, opponent: 1 },
+      },
+    ]);
+  });
+
+  it("numbers games within each set and keeps the final set score", () => {
+    const state = replay([...games("player", 6), ...games("opponent", 1)]);
+    expect(state.history).toHaveLength(7);
+    expect(state.history[5]).toMatchObject({ set: 1, game: 6, setScore: { player: 6, opponent: 0 } });
+    expect(state.history[6]).toMatchObject({ set: 2, game: 1, setScore: { player: 0, opponent: 1 } });
+  });
+
+  it("marks a game with an entered score as manual", () => {
+    const state = replay([...points("player", 1), gameScore(4, 1), ...games("opponent", 1)]);
+    expect(state.history[0]).toMatchObject({ winner: "player", points: { player: 4, opponent: 1 }, manual: true });
+    expect(state.history[1]).toMatchObject({ winner: "opponent", manual: false });
+  });
+
+  it("records a tie-break with the server of its first point", () => {
+    const state = replay([...evenGames(6), ...points("opponent", 5), ...points("player", 7)]);
+    expect(state.history.at(-1)).toEqual({
+      set: 1,
+      game: 13,
+      server: "player",
+      winner: "player",
+      points: { player: 7, opponent: 5 },
+      tiebreak: true,
+      manual: false,
+      setScore: { player: 7, opponent: 6 },
+    });
+  });
+
+  it("records the tie-break starter after switch_server", () => {
+    const state = replay([...evenGames(6), ...points("player", 3), switchServer, ...points("player", 4)]);
+    expect(state.history.at(-1)).toMatchObject({ tiebreak: true, server: "opponent" });
+  });
+
+  it("records the corrected server after switch_server during a game", () => {
+    const state = replay([...points("player", 1), switchServer, ...points("player", 3)]);
+    expect(state.history[0]).toMatchObject({ server: "opponent", winner: "player" });
+    expect(state.server).toBe("player");
+  });
+});
+
+describe("parseMatchActions: game_score", () => {
+  it("accepts a valid game_score", () => {
+    const raw = [gameScore(0, 99), gameScore(4, 2)];
+    expect(parseMatchActions(raw)).toEqual({ ok: true, actions: raw });
+  });
+
+  it.each([
+    ["a negative count", { type: "game_score", player: -1, opponent: 0 }],
+    ["a fractional count", { type: "game_score", player: 1.5, opponent: 0 }],
+    ["a count above 99", { type: "game_score", player: 100, opponent: 0 }],
+    ["a missing count", { type: "game_score", player: 3 }],
+    ["a string count", { type: "game_score", player: "3", opponent: 0 }],
+  ])("rejects %s", (_name, item) => {
+    expect(parseMatchActions([item])).toEqual({ ok: false });
+  });
+
+  it("drops extra fields", () => {
+    const raw = [{ type: "game_score", player: 3, opponent: 2, winner: "player" }];
+    expect(parseMatchActions(raw)).toEqual({ ok: true, actions: [gameScore(3, 2)] });
+  });
+});
+
+describe("sameActions and extendsActions: game_score", () => {
+  it("compares both counts", () => {
+    expect(sameActions([gameScore(3, 2)], [gameScore(3, 2)])).toBe(true);
+    expect(sameActions([gameScore(3, 2)], [gameScore(2, 3)])).toBe(false);
+    expect(sameActions([gameScore(3, 2)], [gameScore(3, 1)])).toBe(false);
+    expect(extendsActions([gameScore(3, 2)], [gameScore(3, 2), switchServer])).toBe(true);
+    expect(extendsActions([gameScore(3, 2)], [gameScore(4, 2), switchServer])).toBe(false);
   });
 });

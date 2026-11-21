@@ -12,10 +12,17 @@ export function pointLabel(points: number): string {
 
 export type Side = FirstServer;
 
-export type MatchAction = { type: "point"; winner: Side } | { type: "switch_server" };
+// game_score sets the points of the current game or tie-break, as entered by hand.
+export type MatchAction =
+  | { type: "point"; winner: Side }
+  | { type: "switch_server" }
+  | { type: "game_score"; player: number; opponent: number };
 
 // Must equal the `check` on matches.events in the match events migration.
 export const MAX_MATCH_ACTIONS = 2000;
+
+// Upper bound for each game_score count accepted from untrusted input.
+export const MAX_GAME_SCORE_POINTS = 99;
 
 export interface ScoringRules {
   gamesPerSet: number;
@@ -44,6 +51,21 @@ export interface SetScore extends Score {
   tiebreak: Score | null;
 }
 
+// One finished game; `set` and `game` count from 1.
+export interface GameRecord {
+  set: number;
+  game: number;
+  // Server when the game ended; in a tie-break the server of its first point.
+  server: Side;
+  winner: Side;
+  points: Score;
+  tiebreak: boolean;
+  // True when a game_score was entered in this game.
+  manual: boolean;
+  // Games in the set after this game.
+  setScore: Score;
+}
+
 export interface MatchState {
   sets: SetScore[];
   games: Score;
@@ -51,10 +73,12 @@ export interface MatchState {
   inTiebreak: boolean;
   server: Side;
   winner: Side | null;
+  history: GameRecord[];
 }
 
 export type ReplayMatchResult =
-  { ok: true; state: MatchState } | { ok: false; error: "action_after_match_end"; index: number };
+  | { ok: true; state: MatchState }
+  | { ok: false; error: "action_after_match_end" | "invalid_game_score"; index: number };
 
 function other(side: Side): Side {
   return side === "player" ? "opponent" : "player";
@@ -69,22 +93,89 @@ function hasWon(score: Score, side: Side, target: number, lead: number): boolean
   return score[side] >= target && score[side] - score[other(side)] >= lead;
 }
 
+function isInProgress(score: Score, target: number, lead: 1 | 2): boolean {
+  if (hasWon(score, "player", target, lead) || hasWon(score, "opponent", target, lead)) {
+    return false;
+  }
+  const belowTarget = score.player <= target - 1 && score.opponent <= target - 1;
+  return belowTarget || (lead === 2 && Math.abs(score.player - score.opponent) <= 1);
+}
+
+// Whether a game (or tie-break) to `target` with the required `lead` can stand at `score`:
+// still in progress, or won exactly by its last point.
+export function isReachableGameScore(score: Score, target: number, lead: 1 | 2): boolean {
+  const { player, opponent } = score;
+  if (!Number.isInteger(player) || !Number.isInteger(opponent) || player < 0 || opponent < 0) {
+    return false;
+  }
+  if (isInProgress(score, target, lead)) {
+    return true;
+  }
+  return (["player", "opponent"] as const).some(
+    (side) => hasWon(score, side, target, lead) && isInProgress({ ...score, [side]: score[side] - 1 }, target, lead),
+  );
+}
+
 // Rebuilds the match from the full action log, so undo is just dropping the last action.
 export function replayMatch(setup: MatchSetup, actions: readonly MatchAction[]): ReplayMatchResult {
   const rules = FORMAT_RULES[setup.format];
   const sets: SetScore[] = [];
   let games: Score = { player: 0, opponent: 0 };
   let points: Score = { player: 0, opponent: 0 };
-  let inTiebreak = false;
+  // Widened on purpose: closeGame reassigns these, which TS narrowing does not see.
+  let inTiebreak = false as boolean;
   // Server of the current regular game; in a tie-break the order derives from tiebreakStarter.
   let server: Side = setup.firstServer;
   let tiebreakStarter: Side = setup.firstServer;
-  let winner: Side | null = null;
+  let winner = null as Side | null;
+  const history: GameRecord[] = [];
+  // Whether a game_score was entered in the current game.
+  let manual = false;
 
   // Records the finished set; returns whether it decided the match.
   const closeSet = (setWinner: Side, finalGames: Score, tiebreak: Score | null): boolean => {
     sets.push({ ...finalGames, tiebreak });
     return sets.filter((set) => set[setWinner] > set[other(setWinner)]).length >= rules.setsToWin;
+  };
+
+  // Closes the won game or tie-break, whether it ended on a point or on a game_score.
+  const closeGame = (side: Side) => {
+    const record = {
+      set: sets.length + 1,
+      game: games.player + games.opponent + 1,
+      server: inTiebreak ? tiebreakStarter : server,
+      winner: side,
+      points,
+      tiebreak: inTiebreak,
+      manual,
+    };
+    games = { ...games, [side]: games[side] + 1 };
+    history.push({ ...record, setScore: games });
+    manual = false;
+
+    if (inTiebreak) {
+      if (closeSet(side, games, points)) {
+        winner = side;
+      }
+      games = { player: 0, opponent: 0 };
+      points = { player: 0, opponent: 0 };
+      inTiebreak = false;
+      // The tie-break counts as one game in the alternation.
+      server = other(tiebreakStarter);
+      return;
+    }
+
+    points = { player: 0, opponent: 0 };
+    server = other(server);
+    if (hasWon(games, side, rules.gamesPerSet, 2)) {
+      if (closeSet(side, games, null)) {
+        winner = side;
+      }
+      games = { player: 0, opponent: 0 };
+    } else if (games.player === rules.tiebreakAt && games.opponent === rules.tiebreakAt) {
+      inTiebreak = true;
+      tiebreakStarter = server;
+    }
   };
 
   for (const [index, action] of actions.entries()) {
@@ -101,42 +192,27 @@ export function replayMatch(setup: MatchSetup, actions: readonly MatchAction[]):
       continue;
     }
 
-    const side = action.winner;
-    points = { ...points, [side]: points[side] + 1 };
-
-    if (inTiebreak) {
-      if (hasWon(points, side, rules.tiebreakTo, 2)) {
-        if (closeSet(side, { ...games, [side]: games[side] + 1 }, points)) {
-          winner = side;
-        }
-        games = { player: 0, opponent: 0 };
-        points = { player: 0, opponent: 0 };
-        inTiebreak = false;
-        // The tie-break counts as one game in the alternation.
-        server = other(tiebreakStarter);
+    const target = inTiebreak ? rules.tiebreakTo : 4;
+    const lead = inTiebreak || setup.withAdvantage ? 2 : 1;
+    if (action.type === "game_score") {
+      const score = { player: action.player, opponent: action.opponent };
+      if (!isReachableGameScore(score, target, lead)) {
+        return { ok: false, error: "invalid_game_score", index };
       }
-      continue;
+      points = score;
+      manual = true;
+    } else {
+      points = { ...points, [action.winner]: points[action.winner] + 1 };
     }
 
-    if (!hasWon(points, side, 4, setup.withAdvantage ? 2 : 1)) {
-      continue;
-    }
-    games = { ...games, [side]: games[side] + 1 };
-    points = { player: 0, opponent: 0 };
-    server = other(server);
-    if (hasWon(games, side, rules.gamesPerSet, 2)) {
-      if (closeSet(side, games, null)) {
-        winner = side;
-      }
-      games = { player: 0, opponent: 0 };
-    } else if (games.player === rules.tiebreakAt && games.opponent === rules.tiebreakAt) {
-      inTiebreak = true;
-      tiebreakStarter = server;
+    const gameWinner = (["player", "opponent"] as const).find((side) => hasWon(points, side, target, lead));
+    if (gameWinner !== undefined) {
+      closeGame(gameWinner);
     }
   }
 
   const currentServer = inTiebreak ? tiebreakServer(tiebreakStarter, points.player + points.opponent) : server;
-  return { ok: true, state: { sets, games, points, inTiebreak, server: currentServer, winner } };
+  return { ok: true, state: { sets, games, points, inTiebreak, server: currentServer, winner, history } };
 }
 
 // Point labels for the current game or tie-break.
@@ -162,6 +238,10 @@ function isSide(value: unknown): value is Side {
   return value === "player" || value === "opponent";
 }
 
+function isGamePoints(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= MAX_GAME_SCORE_POINTS;
+}
+
 // Reads an action log from untrusted input (request body, database, localStorage).
 // Copies only known fields, so extra keys never reach storage.
 export function parseMatchActions(raw: unknown): { ok: true; actions: MatchAction[] } | { ok: false } {
@@ -177,6 +257,8 @@ export function parseMatchActions(raw: unknown): { ok: true; actions: MatchActio
       actions.push({ type: "switch_server" });
     } else if (item.type === "point" && isSide(item.winner)) {
       actions.push({ type: "point", winner: item.winner });
+    } else if (item.type === "game_score" && isGamePoints(item.player) && isGamePoints(item.opponent)) {
+      actions.push({ type: "game_score", player: item.player, opponent: item.opponent });
     } else {
       return { ok: false };
     }
@@ -187,6 +269,9 @@ export function parseMatchActions(raw: unknown): { ok: true; actions: MatchActio
 function sameAction(a: MatchAction, b: MatchAction): boolean {
   if (a.type === "point") {
     return b.type === "point" && b.winner === a.winner;
+  }
+  if (a.type === "game_score") {
+    return b.type === "game_score" && b.player === a.player && b.opponent === a.opponent;
   }
   return b.type === a.type;
 }

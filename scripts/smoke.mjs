@@ -93,6 +93,9 @@ const PLAYER_POINT = { type: "point", winner: "player" };
 const OPPONENT_POINT = { type: "point", winner: "opponent" };
 // 12 games of 4 points win the match 6:0 6:0, so the 49th point comes after the match has ended.
 const MATCH_WINNING_POINTS = Array.from({ length: 48 }, () => PLAYER_POINT);
+// A hand-entered 4:0 wins the game; 6:3 cannot happen in a game with advantage, which the smoke match uses.
+const MANUAL_GAME_WON = { type: "game_score", player: 4, opponent: 0 };
+const MANUAL_GAME_IMPOSSIBLE = { type: "game_score", player: 6, opponent: 3 };
 
 // Saves the log of account A's match. Throws when the match id was not captured, so a missing id cannot pass as a rejected save.
 function saveCapturedMatchLog(baseRevision, events) {
@@ -176,6 +179,17 @@ const fullSteps = [
     { status: 400, text: '"action_after_match_end"' },
   ],
   ["match page renders after saving the log", requestCapturedMatch, { status: 200 }],
+  // The rejected saves above wrote nothing, so the stored log is still two points at revision 2.
+  [
+    "a manual game score is saved",
+    () => saveCapturedMatchLog(2, [PLAYER_POINT, PLAYER_POINT, MANUAL_GAME_WON]),
+    { status: 200, text: '"revision":3' },
+  ],
+  [
+    "a game score impossible in the format is rejected",
+    () => saveCapturedMatchLog(3, [PLAYER_POINT, PLAYER_POINT, MANUAL_GAME_IMPOSSIBLE]),
+    { status: 400, text: '"invalid_game_score"' },
+  ],
   [
     "new match form links the last match",
     () => request("/matches/new"),
