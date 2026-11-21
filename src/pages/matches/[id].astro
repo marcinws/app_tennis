@@ -95,6 +95,10 @@ const firstServer = match.first_server === "player" ? match.player.name : "Przec
             <dd>{matchFormatLabel(match.format) ?? match.format}</dd>
           </div>
           <div>
+            <dt class="text-blue-100/70">Gemy</dt>
+            <dd>{match.with_advantage ? "z przewagami" : "bez przewag"}</dd>
+          </div>
+          <div>
             <dt class="text-blue-100/70">Pierwszy serwuje</dt>
             <dd>{firstServer}</dd>
           </div>

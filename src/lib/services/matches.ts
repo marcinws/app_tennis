@@ -1,5 +1,5 @@
 // Ids must equal the `check` values on matches.format
-// (supabase/migrations/20261117140000_create_matches.sql).
+// (supabase/migrations/20261121120000_add_match_formats.sql).
 export const MATCH_FORMATS = [
   { id: "best_of_3_sets", label: "Do 2 wygranych setów, tie-break przy 6:6" },
   { id: "two_sets_super_tiebreak", label: "2 sety, przy 1:1 super tie-break do 10" },

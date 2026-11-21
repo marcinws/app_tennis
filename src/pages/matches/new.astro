@@ -116,6 +116,19 @@ const errorMessage = matchErrorMessage(Astro.url.searchParams.get("error"));
             </fieldset>
 
             <fieldset>
+              <legend class="mb-2 text-sm text-blue-100/80">Gemy</legend>
+              <div class="space-y-2">
+                <label class="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white transition-colors hover:bg-white/20 has-[:checked]:border-purple-300 has-[:checked]:bg-white/20">
+                  <input type="radio" name="with_advantage" value="true" checked class="size-5" />Z przewagami
+                </label>
+                <label class="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white transition-colors hover:bg-white/20 has-[:checked]:border-purple-300 has-[:checked]:bg-white/20">
+                  <input type="radio" name="with_advantage" value="false" class="size-5" />
+                  Bez przewag (punkt decydujący)
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset>
               <legend class="mb-2 text-sm text-blue-100/80">Pierwszy serwuje</legend>
               <div class="grid grid-cols-2 gap-2">
                 <label class="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white transition-colors hover:bg-white/20 has-[:checked]:border-purple-300 has-[:checked]:bg-white/20">

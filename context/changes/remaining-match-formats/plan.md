@@ -219,19 +219,19 @@ Migracja addytywna: rozszerza `check` i dodaje uprawnienie. Poprzednia wersja Wo
 
 #### Automated
 
-- [x] 1.1 Testy przechodzą: `npm test`
-- [x] 1.2 Celowe zepsucie warunku otwarcia super tie-breaka daje czerwony test; zmiana cofnięta
-- [x] 1.3 Lint przechodzi: `npm run lint`
-- [x] 1.4 Typy przechodzą: `npx astro check`
+- [x] 1.1 Testy przechodzą: `npm test` — f3f2268
+- [x] 1.2 Celowe zepsucie warunku otwarcia super tie-breaka daje czerwony test; zmiana cofnięta — f3f2268
+- [x] 1.3 Lint przechodzi: `npm run lint` — f3f2268
+- [x] 1.4 Typy przechodzą: `npx astro check` — f3f2268
 
 ### Phase 2: Start meczu i ekran w nowych formatach
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Typy przechodzą: `npx astro check`
-- [ ] 2.4 Build przechodzi: `npm run build`
+- [x] 2.1 Testy przechodzą: `npm test`
+- [x] 2.2 Lint przechodzi: `npm run lint`
+- [x] 2.3 Typy przechodzą: `npx astro check`
+- [x] 2.4 Build przechodzi: `npm run build`
 
 #### Manual
 

@@ -4,14 +4,7 @@ import { useMatchLog, type MatchLogStatus } from "@/components/hooks/useMatchLog
 import GameList from "@/components/match/GameList";
 import ManualGameScore from "@/components/match/ManualGameScore";
 import type { MatchFormatId } from "@/lib/services/matches";
-import {
-  FORMAT_RULES,
-  gamePointLabels,
-  MAX_MATCH_ACTIONS,
-  type MatchAction,
-  replayMatch,
-  type Side,
-} from "@/lib/services/scoring";
+import { gamePointLabels, MAX_MATCH_ACTIONS, type MatchAction, replayMatch, type Side } from "@/lib/services/scoring";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -117,7 +110,7 @@ export default function MatchRecorder({
                     Gemy
                   </th>
                   <th scope="col" className="font-normal">
-                    {state.inTiebreak ? "Tie-break" : "Punkty"}
+                    {state.superTiebreak ? "Super tie-break" : state.inTiebreak ? "Tie-break" : "Punkty"}
                   </th>
                 </>
               )}
@@ -138,8 +131,15 @@ export default function MatchRecorder({
                 </th>
                 {state.sets.map((set, index) => (
                   <td key={index} className="py-2 tabular-nums">
-                    {set[side]}
-                    {set.tiebreak && <sup className="ml-0.5 text-xs text-blue-100/70">{set.tiebreak[side]}</sup>}
+                    {set.superTiebreak && set.tiebreak ? (
+                      // A super tie-break replaces the deciding set, so its points are the score.
+                      set.tiebreak[side]
+                    ) : (
+                      <>
+                        {set[side]}
+                        {set.tiebreak && <sup className="ml-0.5 text-xs text-blue-100/70">{set.tiebreak[side]}</sup>}
+                      </>
+                    )}
                   </td>
                 ))}
                 {!finished && (
@@ -238,7 +238,7 @@ export default function MatchRecorder({
           id={panelId}
           state={state}
           withAdvantage={withAdvantage}
-          tiebreakTo={FORMAT_RULES[format].tiebreakTo}
+          tiebreakTo={state.tiebreakTo}
           names={names}
           onSave={(action) => {
             record(action);
