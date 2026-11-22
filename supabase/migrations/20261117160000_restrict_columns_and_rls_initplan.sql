@@ -3,6 +3,7 @@ revoke insert on public.matches from authenticated;
 grant insert (player_id, tournament_name, format, first_server) on public.matches to authenticated;
 revoke insert, update on public.players from authenticated;
 grant insert (name), update (name) on public.players to authenticated;
+-- update (name) also lets enforce_active_goal_limit() lock the player row (20261122120000); keep it.
 
 -- (select auth.uid()) is evaluated once per statement instead of once per row.
 alter policy players_select_own on public.players using (owner_id = (select auth.uid()));

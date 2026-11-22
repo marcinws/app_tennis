@@ -176,6 +176,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:**
   - Czy obserwacje i notatki też mają przetrwać zanik sieci tak jak punkty? FR-011 i zabezpieczenia w PRD mówią tylko o punktach. — Owner: user. Block: no.
+  - Czy treść zakończonego celu ma być niezmienna, skoro obserwacje będą się do niego odnosić? Dziś polityka update na `player_goals` nie sprawdza `active`, pilnuje tego tylko trasa (przegląd S-06, F4). — Owner: user. Block: no.
 - **Risk:** Pisanie notatek odciąga od meczu (zabezpieczenie z PRD), więc obserwacja przy celu musi pozostać szybsza niż notatka.
 - **Status:** proposed
 

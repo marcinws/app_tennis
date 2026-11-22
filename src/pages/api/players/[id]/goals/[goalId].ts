@@ -55,6 +55,7 @@ export const POST: APIRoute = async (context) => {
     console.error("Failed to update goal", error);
     return new Response("Nie udało się zapisać celu", { status: 500 });
   }
+  // A redirect, not 404: a goal ended in another tab is an ordinary stale page, so the message shows on it.
   if (data.length === 0) {
     return redirectWithError("goal_not_found");
   }
