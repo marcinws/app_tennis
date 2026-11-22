@@ -16,6 +16,12 @@ export interface Match {
   // Untrusted until read through parseMatchActions; the database only enforces an array.
   events: unknown;
   revision: number;
-  // Embedded record from `players(name)`.
-  player: { name: string };
+  // Embedded record from `players(id, name)`.
+  player: { id: string; name: string };
+}
+
+export interface PlayerGoal {
+  id: string;
+  text: string;
+  created_at: string;
 }

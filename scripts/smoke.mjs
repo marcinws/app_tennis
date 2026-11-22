@@ -13,6 +13,8 @@ const password = "Smoke-Test-Passw0rd!";
 const jar = new Map();
 const PLAYER_NAME = "Smoke Player";
 const TOURNAMENT_NAME = "Smoke Cup";
+// Three goals fill the active-goal limit; plain text so the pages render them verbatim.
+const GOAL_TEXTS = ["Smoke goal serve", "Smoke goal return", "Smoke goal volley"];
 let playerAId;
 let matchAId;
 // Account A's short-set match without advantage, started after the last-match link check.
@@ -62,6 +64,17 @@ async function capturePlayerId() {
 function renameCapturedPlayer() {
   if (!playerAId) throw new Error("Player id of account A was not captured");
   return request(`/api/players/${playerAId}`, { method: "POST", form: { name: "Smoke Hijacked" } });
+}
+
+// Adds a goal to account A's player. Throws when the player id was not captured, so a missing id cannot pass as a rejected add.
+function addGoalToCapturedPlayer(text) {
+  if (!playerAId) throw new Error("Player id of account A was not captured");
+  return request(`/api/players/${playerAId}/goals`, { method: "POST", form: { text } });
+}
+
+function requestCapturedPlayerGoals() {
+  if (!playerAId) throw new Error("Player id of account A was not captured");
+  return request(`/players/${playerAId}`);
 }
 
 // Starts a match for account A's player. Throws when the player id was not captured, so a missing id cannot pass as a rejected start.
@@ -172,9 +185,65 @@ const fullSteps = [
     { status: 302, location: "/players?error=" },
   ],
   ["player id is read from the rename form", capturePlayerId, { status: 200 }],
+  ["goals page renders", requestCapturedPlayerGoals, { status: 200 }],
+  [
+    "a goal is added",
+    () => addGoalToCapturedPlayer(GOAL_TEXTS[0]),
+    {
+      status: 302,
+      // Getter: the player id is captured by an earlier step, after this array is built.
+      get location() {
+        return `/players/${playerAId}`;
+      },
+    },
+  ],
+  [
+    "a goal is added",
+    () => addGoalToCapturedPlayer(GOAL_TEXTS[1]),
+    {
+      status: 302,
+      // Getter: the player id is captured by an earlier step, after this array is built.
+      get location() {
+        return `/players/${playerAId}`;
+      },
+    },
+  ],
+  [
+    "a goal is added",
+    () => addGoalToCapturedPlayer(GOAL_TEXTS[2]),
+    {
+      status: 302,
+      // Getter: the player id is captured by an earlier step, after this array is built.
+      get location() {
+        return `/players/${playerAId}`;
+      },
+    },
+  ],
+  [
+    "a fourth active goal is rejected",
+    () => addGoalToCapturedPlayer("Smoke goal fourth"),
+    {
+      status: 302,
+      get location() {
+        return `/players/${playerAId}?error=goal_limit`;
+      },
+    },
+  ],
+  [
+    "an empty goal is rejected",
+    () => addGoalToCapturedPlayer("   "),
+    {
+      status: 302,
+      get location() {
+        return `/players/${playerAId}?error=text_empty`;
+      },
+    },
+  ],
+  ["goals page lists the goals", requestCapturedPlayerGoals, { status: 200, text: GOAL_TEXTS[0] }],
   ["new match form lists the player", () => request("/matches/new"), { status: 200, text: PLAYER_NAME }],
   ["starting a match redirects to the match", startAndCaptureMatch, { status: 302, location: "/matches/" }],
   ["match page shows the tournament", requestCapturedMatch, { status: 200, text: TOURNAMENT_NAME }],
+  ["match page shows the player's goals", requestCapturedMatch, { status: 200, text: GOAL_TEXTS[0] }],
   [
     "saving the first point bumps the revision",
     () => saveCapturedMatchLog(0, [PLAYER_POINT]),
@@ -278,6 +347,12 @@ const fullSteps = [
   ],
   ["players of first account are hidden from second", () => request("/players"), { status: 200, absent: PLAYER_NAME }],
   ["second account cannot rename first account's player", renameCapturedPlayer, { status: 404 }],
+  [
+    "second account cannot add a goal to another account's player",
+    () => addGoalToCapturedPlayer("Smoke goal hijacked"),
+    { status: 404 },
+  ],
+  ["second account cannot open another account's goals page", requestCapturedPlayerGoals, { status: 404 }],
   ["second account cannot open first account's match", requestCapturedMatch, { status: 404 }],
   [
     "second account cannot save first account's match log",
