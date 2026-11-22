@@ -3,7 +3,7 @@ project: Tennis Match Companion
 version: 1
 status: draft
 created: 2026-11-13
-updated: 2026-11-21
+updated: 2026-11-22
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -40,18 +40,18 @@ Rodzic dziecka grającego w turniejach tenisowych musi w trakcie meczu liczyć i
 
 ## At a glance
 
-| ID   | Change ID                       | Outcome (user can …)                                                                 | Prerequisites | PRD refs                                                              | Status      |
-| ---- | ------------------------------- | ------------------------------------------------------------------------------------ | ------------- | --------------------------------------------------------------------- | ----------- |
-| F-01 | domain-test-runner              | (foundation) reguły liczenia wyniku da się sprawdzać testami jednostkowymi w CI      | —             | Business Logic, FR-004                                                | done        |
-| S-01 | player-roster                   | rodzic może zdefiniować zawodników, widocznych tylko na jego koncie                  | —             | FR-001, FR-002, FR-018, NFR-owner-only                                | done        |
-| S-02 | match-start                     | rodzic może rozpocząć mecz: zawodnik, opcjonalna nazwa turnieju, format, serwujący   | S-01          | FR-003, FR-004, FR-020                                                | done        |
-| S-03 | point-scoring-first-format      | rodzic może zapisywać punkty jednym dotknięciem, cofać je i nie tracić ich bez sieci | S-02, F-01    | US-01, FR-004, FR-005, FR-008, FR-010, FR-011, NFR-200ms, NFR-android | done        |
-| S-04 | manual-game-score-and-game-list | rodzic może ręcznie wpisać wynik gema i zobaczyć przebieg meczu jako listę gemów     | S-03          | FR-007, FR-009                                                        | done        |
-| S-05 | remaining-match-formats         | rodzic może zapisać mecz z super tie-breakiem lub w krótkich setach                  | S-03          | FR-004                                                                | in-progress |
-| S-06 | player-goals-on-match-screen    | rodzic może ustawić do trzech celów zawodnika i widzieć je na ekranie meczu          | S-01, S-03    | FR-012, FR-013                                                        | proposed    |
-| S-07 | in-match-observations-and-notes | rodzic może jednym dotknięciem zaznaczyć obserwację przy celu i dopisać notatkę      | S-06          | FR-014, FR-015                                                        | proposed    |
-| S-08 | post-match-summary              | rodzic może zobaczyć podsumowanie meczu i uzupełnić nazwę turnieju po meczu          | S-04, S-07    | US-01, FR-003, FR-016                                                 | proposed    |
-| S-09 | match-history                   | rodzic może przeglądać wcześniejsze mecze, otworzyć podgląd i usunąć mecz            | S-03          | FR-017                                                                | proposed    |
+| ID   | Change ID                       | Outcome (user can …)                                                                 | Prerequisites | PRD refs                                                              | Status   |
+| ---- | ------------------------------- | ------------------------------------------------------------------------------------ | ------------- | --------------------------------------------------------------------- | -------- |
+| F-01 | domain-test-runner              | (foundation) reguły liczenia wyniku da się sprawdzać testami jednostkowymi w CI      | —             | Business Logic, FR-004                                                | done     |
+| S-01 | player-roster                   | rodzic może zdefiniować zawodników, widocznych tylko na jego koncie                  | —             | FR-001, FR-002, FR-018, NFR-owner-only                                | done     |
+| S-02 | match-start                     | rodzic może rozpocząć mecz: zawodnik, opcjonalna nazwa turnieju, format, serwujący   | S-01          | FR-003, FR-004, FR-020                                                | done     |
+| S-03 | point-scoring-first-format      | rodzic może zapisywać punkty jednym dotknięciem, cofać je i nie tracić ich bez sieci | S-02, F-01    | US-01, FR-004, FR-005, FR-008, FR-010, FR-011, NFR-200ms, NFR-android | done     |
+| S-04 | manual-game-score-and-game-list | rodzic może ręcznie wpisać wynik gema i zobaczyć przebieg meczu jako listę gemów     | S-03          | FR-007, FR-009                                                        | done     |
+| S-05 | remaining-match-formats         | rodzic może zapisać mecz z super tie-breakiem lub w krótkich setach                  | S-03          | FR-004                                                                | done     |
+| S-06 | player-goals-on-match-screen    | rodzic może ustawić do trzech celów zawodnika i widzieć je na ekranie meczu          | S-01, S-03    | FR-012, FR-013                                                        | proposed |
+| S-07 | in-match-observations-and-notes | rodzic może jednym dotknięciem zaznaczyć obserwację przy celu i dopisać notatkę      | S-06          | FR-014, FR-015                                                        | proposed |
+| S-08 | post-match-summary              | rodzic może zobaczyć podsumowanie meczu i uzupełnić nazwę turnieju po meczu          | S-04, S-07    | US-01, FR-003, FR-016                                                 | proposed |
+| S-09 | match-history                   | rodzic może przeglądać wcześniejsze mecze, otworzyć podgląd i usunąć mecz            | S-03          | FR-017                                                                | proposed |
 
 ## Streams
 
@@ -152,7 +152,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** PRD zakłada, że dwa kolejne formaty dochodzą po przetestowaniu reguł na pierwszym; przy celu `speed` to pierwszy kandydat do przesunięcia, jeśli zabraknie czasu.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-06: Cele zawodnika na ekranie meczu
 
@@ -244,3 +244,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-02: rodzic może rozpocząć mecz, wybierając zawodnika, wpisując nazwę turnieju albo zostawiając ją pustą, wybierając format i wskazując pierwszego serwującego.** — Archived 2026-11-17 → `context/archive/2026-11-17-match-start/`. Lesson: Uprawnienia tylko na kolumny z formularza (`context/foundation/lessons.md`).
 - **S-03: rodzic może zapisywać wygrane punkty jednym dotknięciem w formacie „do 2 wygranych setów”, cofać ostatnie akcje, widzieć aktualny wynik i podpowiedź serwującego z możliwością poprawki, a przy słabej lub zanikającej sieci zapisane punkty nie przepadają.** — Archived 2026-11-18 → `context/archive/2026-11-18-point-scoring-first-format/`. Lesson: —.
 - **S-04: rodzic może ręcznie wpisać wynik gema, gdy przegapił punkty (aplikacja odrzuca wyniki niezgodne z formatem), i zobaczyć przebieg meczu jako listę wyników gemów.** — Archived 2026-11-21 → `context/archive/2026-11-18-manual-game-score-and-game-list/`. Lesson: —.
+- **S-05: rodzic może zapisać mecz w formacie „2 sety i super tie-break do 10” albo w krótkich setach do 4 gemów, w każdym z gemami z przewagami lub bez.** — Archived 2026-11-22 → `context/archive/2026-11-21-remaining-match-formats/`. Lesson: —.

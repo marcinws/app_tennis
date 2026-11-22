@@ -1,10 +1,10 @@
 ---
 change_id: remaining-match-formats
 title: Pozostałe formaty meczu (super tie-break, krótkie sety)
-status: impl_reviewed
+status: archived
 created: 2026-11-21
 updated: 2026-11-22
-archived_at: null
+archived_at: 2026-11-22T15:07:04Z
 ---
 
 ## Notes
