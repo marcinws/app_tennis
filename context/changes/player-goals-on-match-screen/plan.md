@@ -226,10 +226,10 @@ Migracja addytywna: nowa tabela, funkcja i wyzwalacz. Poprzednia wersja Workera 
 
 #### Automated
 
-- [x] 2.1 Testy przechodzą: `npm test`
-- [x] 2.2 Lint przechodzi: `npm run lint`
-- [x] 2.3 Typy przechodzą: `npx astro check`
-- [x] 2.4 Build przechodzi: `npm run build`
+- [x] 2.1 Testy przechodzą: `npm test` — 61d1ac6
+- [x] 2.2 Lint przechodzi: `npm run lint` — 61d1ac6
+- [x] 2.3 Typy przechodzą: `npx astro check` — 61d1ac6
+- [x] 2.4 Build przechodzi: `npm run build` — 61d1ac6
 
 #### Manual
 
@@ -240,7 +240,7 @@ Migracja addytywna: nowa tabela, funkcja i wyzwalacz. Poprzednia wersja Workera 
 
 #### Automated
 
-- [ ] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
+- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
 - [ ] 3.2 CI na PR zielone, w tym nowe kroki smoke
 
 #### Manual
