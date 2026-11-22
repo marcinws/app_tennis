@@ -218,18 +218,18 @@ Migracja addytywna: nowa tabela, funkcja i wyzwalacz. Poprzednia wersja Workera 
 
 #### Automated
 
-- [x] 1.1 Testy przechodzą: `npm test`
-- [x] 1.2 Lint przechodzi: `npm run lint`
-- [x] 1.3 Typy przechodzą: `npx astro check`
+- [x] 1.1 Testy przechodzą: `npm test` — 50601b0
+- [x] 1.2 Lint przechodzi: `npm run lint` — 50601b0
+- [x] 1.3 Typy przechodzą: `npx astro check` — 50601b0
 
 ### Phase 2: Zarządzanie celami i cele na ekranie meczu
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Typy przechodzą: `npx astro check`
-- [ ] 2.4 Build przechodzi: `npm run build`
+- [x] 2.1 Testy przechodzą: `npm test`
+- [x] 2.2 Lint przechodzi: `npm run lint`
+- [x] 2.3 Typy przechodzą: `npx astro check`
+- [x] 2.4 Build przechodzi: `npm run build`
 
 #### Manual
 

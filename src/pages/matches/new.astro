@@ -23,7 +23,7 @@ if (playersError) {
 
 const { data: lastMatches, error: lastMatchError } = await supabase
   .from("matches")
-  .select("id, tournament_name, created_at, player:players(name)")
+  .select("id, tournament_name, created_at, player:players(id, name)")
   .order("created_at", { ascending: false })
   .limit(1)
   .overrideTypes<Pick<Match, "id" | "tournament_name" | "created_at" | "player">[], { merge: false }>();

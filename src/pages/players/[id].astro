@@ -1,0 +1,145 @@
+---
+import { z } from "astro/zod";
+import Layout from "@/layouts/Layout.astro";
+import Topbar from "@/components/Topbar.astro";
+import { createClient } from "@/lib/supabase";
+import { GOAL_TEXT_MAX_LENGTH, GOAL_ERROR_MESSAGES, canAddGoal, goalErrorMessage } from "@/lib/services/goals";
+import type { Player, PlayerGoal } from "@/types";
+
+function notFound() {
+  return new Response("Nie znaleziono zawodnika", { status: 404 });
+}
+
+const parsedId = z.uuid().safeParse(Astro.params.id);
+if (!parsedId.success) {
+  return notFound();
+}
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+if (!supabase) {
+  return new Response("Supabase nie jest skonfigurowany", { status: 500 });
+}
+
+// Under RLS a foreign player is indistinguishable from a missing one: both read as no row.
+const { data: player, error: playerError } = await supabase
+  .from("players")
+  .select("id, name")
+  .eq("id", parsedId.data)
+  .maybeSingle()
+  .overrideTypes<Pick<Player, "id" | "name"> | null, { merge: false }>();
+if (playerError) {
+  // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
+  console.error("Failed to load player", playerError);
+  return new Response("Nie udało się wczytać zawodnika", { status: 500 });
+}
+if (!player) {
+  return notFound();
+}
+
+const { data: goals, error: goalsError } = await supabase
+  .from("player_goals")
+  .select("id, text, created_at")
+  .eq("player_id", player.id)
+  .eq("active", true)
+  .order("created_at", { ascending: true })
+  .overrideTypes<PlayerGoal[], { merge: false }>();
+if (goalsError) {
+  // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
+  console.error("Failed to load goals", goalsError);
+  return new Response("Nie udało się wczytać celów", { status: 500 });
+}
+
+const errorMessage = goalErrorMessage(Astro.url.searchParams.get("error"));
+---
+
+<Layout title={`Cele: ${player.name}`}>
+  <div class="bg-cosmic min-h-screen p-4">
+    <div class="mx-auto max-w-xl">
+      <Topbar />
+      <div class="rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl">
+        <a
+          href="/players"
+          class="mb-4 inline-block text-sm text-purple-300 transition-colors hover:text-purple-100 hover:underline"
+        >
+          ← Zawodnicy
+        </a>
+        <h1 class="mb-6 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-3xl font-bold text-transparent">
+          Cele: {player.name}
+        </h1>
+
+        {errorMessage && (
+          <p role="alert" class="mb-4 rounded-lg border border-red-400/40 bg-red-500/20 px-3 py-2 text-sm text-red-100">
+            {errorMessage}
+          </p>
+        )}
+
+        {canAddGoal(goals.length) ? (
+          <form method="POST" action={`/api/players/${player.id}/goals`} class="mb-6 flex gap-2">
+            <label for="new-goal-text" class="sr-only">
+              Treść nowego celu
+            </label>
+            <input
+              id="new-goal-text"
+              type="text"
+              name="text"
+              required
+              maxlength={GOAL_TEXT_MAX_LENGTH}
+              placeholder="Nowy cel"
+              class="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-blue-100/40 focus:border-purple-300 focus:outline-none"
+            />
+            <button
+              type="submit"
+              class="shrink-0 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm text-white transition-colors hover:bg-white/20"
+            >
+              Dodaj cel
+            </button>
+          </form>
+        ) : (
+          <p class="mb-6 text-sm text-blue-100/70">{GOAL_ERROR_MESSAGES.goal_limit}</p>
+        )}
+
+        {goals.length === 0 ? (
+          <p class="text-blue-100/70">Ten zawodnik nie ma jeszcze celów.</p>
+        ) : (
+          <ul class="space-y-2">
+            {goals.map((goal) => (
+              <li>
+                <form method="POST" action={`/api/players/${player.id}/goals/${goal.id}`} class="flex gap-2">
+                  <label for={`goal-text-${goal.id}`} class="sr-only">
+                    Treść celu
+                  </label>
+                  <input
+                    id={`goal-text-${goal.id}`}
+                    type="text"
+                    name="text"
+                    required
+                    maxlength={GOAL_TEXT_MAX_LENGTH}
+                    value={goal.text}
+                    class="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-blue-100/40 focus:border-purple-300 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    name="action"
+                    value="save"
+                    class="shrink-0 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm text-white transition-colors hover:bg-white/20"
+                  >
+                    Zapisz
+                  </button>
+                  <button
+                    type="submit"
+                    name="action"
+                    value="end"
+                    formnovalidate
+                    class="shrink-0 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm text-white transition-colors hover:bg-white/20"
+                  >
+                    Zakończ
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  </div>
+</Layout>
