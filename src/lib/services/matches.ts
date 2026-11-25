@@ -23,6 +23,8 @@ export const MATCH_ERROR_MESSAGES = {
   format_invalid: "Wybierz format meczu",
   first_server_invalid: "Wskaż, kto serwuje pierwszy",
   advantage_invalid: "Wybierz, czy gemy są z przewagami",
+  tournament_empty: "Wpisz nazwę turnieju",
+  tournament_already_set: "Nazwa turnieju jest już uzupełniona",
   not_configured: "Supabase nie jest skonfigurowany",
 } as const;
 
