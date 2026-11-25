@@ -216,8 +216,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-04       | manual-game-score-and-game-list | Ręczny wynik gema i lista gemów                             | —                     | Zrobione (archiwum)                                                       |
 | S-05       | remaining-match-formats         | Super tie-break i krótkie sety                              | —                     | Zrobione (archiwum)                                                       |
 | S-06       | player-goals-on-match-screen    | Cele zawodnika na ekranie meczu                             | —                     | Zrobione (archiwum)                                                       |
-| S-07       | in-match-observations-and-notes | Obserwacje przy celach i notatki podczas meczu              | yes                   | Run `/10x-plan in-match-observations-and-notes`                           |
-| S-08       | post-match-summary              | Podsumowanie meczu i uzupełnienie turnieju                  | no                    | Czeka na S-07                                                             |
+| S-07       | in-match-observations-and-notes | Obserwacje przy celach i notatki podczas meczu              | —                     | Zrobione (archiwum)                                                       |
+| S-08       | post-match-summary              | Podsumowanie meczu i uzupełnienie turnieju                  | yes                   | Run `/10x-plan post-match-summary`                                        |
 | S-09       | match-history                   | Historia meczów z podglądem i usuwaniem                     | yes                   | Run `/10x-plan match-history`; najpierw ustal, czy podgląd = ekran z S-08 |
 
 ## Open Roadmap Questions
