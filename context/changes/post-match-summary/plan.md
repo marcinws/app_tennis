@@ -235,18 +235,18 @@ Tylko `grant update (tournament_name)`. Wycofanie kodu jest bezpieczne, bo poprz
 
 #### Automated
 
-- [ ] 1.1 Testy przechodzą: `npm test`
-- [ ] 1.2 Lint przechodzi: `npm run lint`
-- [ ] 1.3 Typy przechodzą: `npx astro check`
+- [x] 1.1 Testy przechodzą: `npm test` — 6938e5e
+- [x] 1.2 Lint przechodzi: `npm run lint` — 6938e5e
+- [x] 1.3 Typy przechodzą: `npx astro check` — 6938e5e
 
 ### Phase 2: Ekran podsumowania i uzupełnienie turnieju
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Typy przechodzą: `npx astro check`
-- [ ] 2.4 Build przechodzi: `npm run build`
+- [x] 2.1 Testy przechodzą: `npm test` — 423abcf
+- [x] 2.2 Lint przechodzi: `npm run lint` — 423abcf
+- [x] 2.3 Typy przechodzą: `npx astro check` — 423abcf
+- [x] 2.4 Build przechodzi: `npm run build` — 423abcf
 
 #### Manual
 

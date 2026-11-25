@@ -28,6 +28,9 @@ let shortMatchId;
 const OBSERVATION_IDS = [randomUUID(), randomUUID()];
 const NOTE_IDS = [randomUUID(), randomUUID()];
 const NOTE_TEXTS = ["Smoke note deleted", "Smoke note kept"];
+const FILLED_TOURNAMENT_NAME = "Smoke Open";
+// Account A's match left without a tournament name; account B later tries to fill it in.
+let unnamedMatchId;
 
 function cookieHeader() {
   return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
@@ -148,6 +151,28 @@ async function startAndCaptureShortMatch() {
     );
   shortMatchId = match[1];
   return actual;
+}
+
+// Starts a match without a tournament name and reads its id, like startAndCaptureMatch.
+async function startAndCaptureUnnamedMatch() {
+  const actual = await startMatchForCapturedPlayer({});
+  const match = /^\/matches\/([0-9a-f-]{36})$/.exec(actual.location);
+  if (!match)
+    throw new Error(
+      `No match id in the redirect after starting an unnamed match (status ${actual.status}, location "${actual.location}")`,
+    );
+  unnamedMatchId = match[1];
+  return actual;
+}
+
+function requestSummary(matchId) {
+  if (!matchId) throw new Error("Match id of account A was not captured");
+  return request(`/matches/${matchId}/summary`);
+}
+
+function fillTournamentName(matchId, name) {
+  if (!matchId) throw new Error("Match id of account A was not captured");
+  return request(`/api/matches/${matchId}/tournament`, { method: "POST", form: { tournament_name: name } });
 }
 
 function saveShortMatchLog(baseRevision, events) {
@@ -457,6 +482,53 @@ const fullSteps = [
     () => saveShortMatchLog(1, [DECIDING_POINT_GAME, ADVANTAGE_GAME]),
     { status: 400, text: '"invalid_game_score"' },
   ],
+  [
+    "summary shows the result, goals and notes",
+    () => requestSummary(matchAId),
+    { status: 200, text: NOTE_TEXTS[1], absent: NOTE_TEXTS[0] },
+  ],
+  ["summary lists the observed goal", () => requestSummary(matchAId), { status: 200, text: EDITED_GOAL_TEXT }],
+  [
+    "summary of a match without a tournament offers the form",
+    () => requestSummary(shortMatchId),
+    { status: 200, text: 'name="tournament_name"' },
+  ],
+  [
+    "an empty tournament name is rejected",
+    () => fillTournamentName(shortMatchId, "   "),
+    {
+      status: 302,
+      get location() {
+        return `/matches/${shortMatchId}/summary?error=tournament_empty`;
+      },
+    },
+  ],
+  [
+    "a missing tournament name is filled in",
+    () => fillTournamentName(shortMatchId, FILLED_TOURNAMENT_NAME),
+    {
+      status: 302,
+      get location() {
+        return `/matches/${shortMatchId}/summary`;
+      },
+    },
+  ],
+  [
+    "summary shows the filled-in name without the form",
+    () => requestSummary(shortMatchId),
+    { status: 200, text: FILLED_TOURNAMENT_NAME, absent: 'name="tournament_name"' },
+  ],
+  [
+    "an existing tournament name is not replaced",
+    () => fillTournamentName(shortMatchId, "Smoke Renamed"),
+    {
+      status: 302,
+      get location() {
+        return `/matches/${shortMatchId}/summary?error=tournament_already_set`;
+      },
+    },
+  ],
+  ["a match without a tournament starts", startAndCaptureUnnamedMatch, { status: 302, location: "/matches/" }],
   ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, location: "/" }],
   ["dashboard redirects after signout", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
   // Account B checks that RLS hides and protects account A's players.
@@ -503,6 +575,17 @@ const fullSteps = [
     { status: 302, location: "/matches/new?error=player_not_found" },
   ],
   ["second account has no last match", () => request("/matches/new"), { status: 200, absent: TOURNAMENT_NAME }],
+  ["second account cannot open first account's summary", () => requestSummary(matchAId), { status: 404 }],
+  [
+    "second account cannot fill in first account's tournament name",
+    () => fillTournamentName(unnamedMatchId, "Smoke Hijacked Cup"),
+    {
+      status: 302,
+      get location() {
+        return `/matches/${unnamedMatchId}/summary?error=tournament_already_set`;
+      },
+    },
+  ],
   [
     "second account cannot add an observation to first account's match",
     () => putCapturedObservation(randomUUID()),
@@ -541,6 +624,11 @@ const fullSteps = [
     requestCapturedMatch,
     { status: 200, text: OBSERVATION_IDS[1] },
   ],
+  [
+    "first account's match keeps its empty tournament name",
+    () => requestSummary(unnamedMatchId),
+    { status: 200, text: 'name="tournament_name"', absent: "Smoke Hijacked Cup" },
+  ],
 ];
 
 // Read-only checks: a sign-in attempt for an account that does not exist proves the Worker reaches Supabase.
@@ -567,6 +655,11 @@ const productionSteps = [
         method: "PUT",
         json: { base_revision: 0, events: [PLAYER_POINT] },
       }),
+    { status: 302, location: "/auth/signin" },
+  ],
+  [
+    "match summary redirects anonymous user",
+    () => request(`/matches/${randomUUID()}/summary`),
     { status: 302, location: "/auth/signin" },
   ],
   [
