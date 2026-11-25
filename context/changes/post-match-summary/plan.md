@@ -250,7 +250,7 @@ Tylko `grant update (tournament_name)`. Wycofanie kodu jest bezpieczne, bo poprz
 
 #### Manual
 
-- [ ] 2.5 Na telefonie: po zakończonym meczu link prowadzi do podsumowania z poprawnym wynikiem, celami z liczbą obserwacji i notatkami; uzupełnienie pustej nazwy turnieju działa
+- [x] 2.5 Na telefonie: po zakończonym meczu link prowadzi do podsumowania z poprawnym wynikiem, celami z liczbą obserwacji i notatkami; uzupełnienie pustej nazwy turnieju działa
 
 ### Phase 3: Smoke i wdrożenie
 
@@ -263,5 +263,5 @@ Tylko `grant update (tournament_name)`. Wycofanie kodu jest bezpieczne, bo poprz
 
 - [x] 3.3 `npx supabase db push` na produkcji przed merge, potwierdzony przez `npx supabase migration list --linked`
 - [x] 3.4 Po merge job `deploy` i smoke produkcyjny zielone — c0edb1e
-- [ ] 3.5 Na telefonie na produkcji: podsumowanie prawdziwego meczu poprawne
+- [x] 3.5 Na telefonie na produkcji: podsumowanie prawdziwego meczu poprawne
 - [x] 3.6 Dziennik wdrożeń uzupełniony
