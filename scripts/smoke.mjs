@@ -24,6 +24,10 @@ const goalIds = new Map();
 let matchAId;
 // Account A's short-set match without advantage, started after the last-match link check.
 let shortMatchId;
+// Ids picked by the "phone" for account A's observations and notes; the first of each is deleted again.
+const OBSERVATION_IDS = [randomUUID(), randomUUID()];
+const NOTE_IDS = [randomUUID(), randomUUID()];
+const NOTE_TEXTS = ["Smoke note deleted", "Smoke note kept"];
 
 function cookieHeader() {
   return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
@@ -154,6 +158,30 @@ function saveShortMatchLog(baseRevision, events) {
 function requestCapturedMatch() {
   if (!matchAId) throw new Error("Match id of account A was not captured");
   return request(`/matches/${matchAId}`);
+}
+
+// Saves or deletes an observation in account A's match at account A's first goal (or `goalId`).
+function putCapturedObservation(observationId, goalId = goalIds.get(GOAL_TEXTS[0])) {
+  if (!matchAId || !goalId) throw new Error("Match or goal id of account A was not captured");
+  return request(`/api/matches/${matchAId}/observations/${observationId}`, {
+    method: "PUT",
+    json: { goal_id: goalId },
+  });
+}
+
+function deleteCapturedObservation(observationId) {
+  if (!matchAId) throw new Error("Match id of account A was not captured");
+  return request(`/api/matches/${matchAId}/observations/${observationId}`, { method: "DELETE" });
+}
+
+function putCapturedNote(noteId, text) {
+  if (!matchAId) throw new Error("Match id of account A was not captured");
+  return request(`/api/matches/${matchAId}/notes/${noteId}`, { method: "PUT", json: { text } });
+}
+
+function deleteCapturedNote(noteId) {
+  if (!matchAId) throw new Error("Match id of account A was not captured");
+  return request(`/api/matches/${matchAId}/notes/${noteId}`, { method: "DELETE" });
 }
 
 const PLAYER_POINT = { type: "point", winner: "player" };
@@ -310,6 +338,40 @@ const fullSteps = [
   ["starting a match redirects to the match", startAndCaptureMatch, { status: 302, location: "/matches/" }],
   ["match page shows the tournament", requestCapturedMatch, { status: 200, text: TOURNAMENT_NAME }],
   ["match page shows the player's goals", requestCapturedMatch, { status: 200, text: GOAL_TEXTS[0] }],
+  ["an observation is saved", () => putCapturedObservation(OBSERVATION_IDS[0]), { status: 200 }],
+  // A retry whose response was lost: the id is already stored, so it succeeds without a duplicate.
+  ["retrying the same observation succeeds", () => putCapturedObservation(OBSERVATION_IDS[0]), { status: 200 }],
+  ["a second observation is saved", () => putCapturedObservation(OBSERVATION_IDS[1]), { status: 200 }],
+  [
+    "an observation at an unknown goal is rejected",
+    () => putCapturedObservation(randomUUID(), randomUUID()),
+    { status: 404, text: '"goal_not_found"' },
+  ],
+  // The ids travel in the island props on the match page.
+  ["match page shows the observations", requestCapturedMatch, { status: 200, text: OBSERVATION_IDS[0] }],
+  ["an observation is deleted", () => deleteCapturedObservation(OBSERVATION_IDS[0]), { status: 204 }],
+  ["deleting it again succeeds", () => deleteCapturedObservation(OBSERVATION_IDS[0]), { status: 204 }],
+  [
+    "match page drops the deleted observation",
+    requestCapturedMatch,
+    { status: 200, text: OBSERVATION_IDS[1], absent: OBSERVATION_IDS[0] },
+  ],
+  ["a note is saved", () => putCapturedNote(NOTE_IDS[0], NOTE_TEXTS[0]), { status: 200 }],
+  ["retrying the same note succeeds", () => putCapturedNote(NOTE_IDS[0], NOTE_TEXTS[0]), { status: 200 }],
+  ["a second note is saved", () => putCapturedNote(NOTE_IDS[1], NOTE_TEXTS[1]), { status: 200 }],
+  [
+    "a note over 200 characters is rejected",
+    () => putCapturedNote(randomUUID(), "a".repeat(201)),
+    { status: 400, text: '"text_too_long"' },
+  ],
+  ["an empty note is rejected", () => putCapturedNote(randomUUID(), "   "), { status: 400, text: '"text_empty"' }],
+  ["match page shows the notes", requestCapturedMatch, { status: 200, text: NOTE_TEXTS[0] }],
+  ["a note is deleted", () => deleteCapturedNote(NOTE_IDS[0]), { status: 204 }],
+  [
+    "match page drops the deleted note",
+    requestCapturedMatch,
+    { status: 200, text: NOTE_TEXTS[1], absent: NOTE_TEXTS[0] },
+  ],
   [
     "saving the first point bumps the revision",
     () => saveCapturedMatchLog(0, [PLAYER_POINT]),
@@ -441,6 +503,23 @@ const fullSteps = [
     { status: 302, location: "/matches/new?error=player_not_found" },
   ],
   ["second account has no last match", () => request("/matches/new"), { status: 200, absent: TOURNAMENT_NAME }],
+  [
+    "second account cannot add an observation to first account's match",
+    () => putCapturedObservation(randomUUID()),
+    { status: 404, text: '"match_not_found"' },
+  ],
+  [
+    "second account cannot add a note to first account's match",
+    () => putCapturedNote(randomUUID(), "Smoke note hijacked"),
+    { status: 404, text: '"match_not_found"' },
+  ],
+  // RLS turns a foreign delete into zero rows, which reads like an already deleted entry.
+  ["second account's delete of a foreign note is a no-op", () => deleteCapturedNote(NOTE_IDS[1]), { status: 204 }],
+  [
+    "second account's delete of a foreign observation is a no-op",
+    () => deleteCapturedObservation(OBSERVATION_IDS[1]),
+    { status: 204 },
+  ],
   // Back as account A: the 404 above must mean RLS blocked the update, not that the route broke.
   [
     "signin accepts first account again",
@@ -456,6 +535,12 @@ const fullSteps = [
     { status: 200, text: PLAYER_NAME, absent: "Smoke Hijacked" },
   ],
   ["first account's goal stays active", requestCapturedPlayerGoals, { status: 200, text: EDITED_GOAL_TEXT }],
+  ["first account's note survives the foreign delete", requestCapturedMatch, { status: 200, text: NOTE_TEXTS[1] }],
+  [
+    "first account's observation survives the foreign delete",
+    requestCapturedMatch,
+    { status: 200, text: OBSERVATION_IDS[1] },
+  ],
 ];
 
 // Read-only checks: a sign-in attempt for an account that does not exist proves the Worker reaches Supabase.
@@ -482,6 +567,11 @@ const productionSteps = [
         method: "PUT",
         json: { base_revision: 0, events: [PLAYER_POINT] },
       }),
+    { status: 302, location: "/auth/signin" },
+  ],
+  [
+    "match note save redirects anonymous user",
+    () => request(`/api/matches/${randomUUID()}/notes/${randomUUID()}`, { method: "PUT", json: { text: "probe" } }),
     { status: 302, location: "/auth/signin" },
   ],
 ];

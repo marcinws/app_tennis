@@ -250,10 +250,10 @@ Migracja tylko dodaje tabele, klucze unikalne i zmienia jedną politykę. Istnie
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Typy przechodzą: `npx astro check`
-- [ ] 2.4 Build przechodzi: `npm run build`
+- [x] 2.1 Testy przechodzą: `npm test` — e68f87b
+- [x] 2.2 Lint przechodzi: `npm run lint` — e68f87b
+- [x] 2.3 Typy przechodzą: `npx astro check` — e68f87b
+- [x] 2.4 Build przechodzi: `npm run build` — e68f87b
 
 #### Manual
 
