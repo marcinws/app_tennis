@@ -207,18 +207,18 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Backlog Handoff
 
-| Roadmap ID | Change ID                       | Suggested issue title                                       | Ready for `/10x-plan` | Notes                                                                     |
-| ---------- | ------------------------------- | ----------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------- |
-| F-01       | domain-test-runner              | Testy jednostkowe reguł domenowych w CI                     | —                     | Zrobione (archiwum)                                                       |
-| S-01       | player-roster                   | Lista zawodników widoczna tylko dla właściciela             | —                     | Zrobione (archiwum)                                                       |
-| S-02       | match-start                     | Start meczu: zawodnik, turniej, format, pierwszy serwujący  | —                     | Zrobione (archiwum)                                                       |
-| S-03       | point-scoring-first-format      | Zapis punktów z cofaniem, odporny na brak sieci (1. format) | —                     | Zrobione (archiwum)                                                       |
-| S-04       | manual-game-score-and-game-list | Ręczny wynik gema i lista gemów                             | —                     | Zrobione (archiwum)                                                       |
-| S-05       | remaining-match-formats         | Super tie-break i krótkie sety                              | —                     | Zrobione (archiwum)                                                       |
-| S-06       | player-goals-on-match-screen    | Cele zawodnika na ekranie meczu                             | —                     | Zrobione (archiwum)                                                       |
-| S-07       | in-match-observations-and-notes | Obserwacje przy celach i notatki podczas meczu              | —                     | Zrobione (archiwum)                                                       |
-| S-08       | post-match-summary              | Podsumowanie meczu i uzupełnienie turnieju                  | yes                   | Run `/10x-plan post-match-summary`                                        |
-| S-09       | match-history                   | Historia meczów z podglądem i usuwaniem                     | yes                   | Run `/10x-plan match-history`; najpierw ustal, czy podgląd = ekran z S-08 |
+| Roadmap ID | Change ID                       | Suggested issue title                                       | Ready for `/10x-plan` | Notes                                                                    |
+| ---------- | ------------------------------- | ----------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------ |
+| F-01       | domain-test-runner              | Testy jednostkowe reguł domenowych w CI                     | —                     | Zrobione (archiwum)                                                      |
+| S-01       | player-roster                   | Lista zawodników widoczna tylko dla właściciela             | —                     | Zrobione (archiwum)                                                      |
+| S-02       | match-start                     | Start meczu: zawodnik, turniej, format, pierwszy serwujący  | —                     | Zrobione (archiwum)                                                      |
+| S-03       | point-scoring-first-format      | Zapis punktów z cofaniem, odporny na brak sieci (1. format) | —                     | Zrobione (archiwum)                                                      |
+| S-04       | manual-game-score-and-game-list | Ręczny wynik gema i lista gemów                             | —                     | Zrobione (archiwum)                                                      |
+| S-05       | remaining-match-formats         | Super tie-break i krótkie sety                              | —                     | Zrobione (archiwum)                                                      |
+| S-06       | player-goals-on-match-screen    | Cele zawodnika na ekranie meczu                             | —                     | Zrobione (archiwum)                                                      |
+| S-07       | in-match-observations-and-notes | Obserwacje przy celach i notatki podczas meczu              | —                     | Zrobione (archiwum)                                                      |
+| S-08       | post-match-summary              | Podsumowanie meczu i uzupełnienie turnieju                  | —                     | Zrobione (archiwum)                                                      |
+| S-09       | match-history                   | Historia meczów z podglądem i usuwaniem                     | yes                   | Run `/10x-plan match-history`; podgląd meczu = ekran podsumowania z S-08 |
 
 ## Open Roadmap Questions
 
