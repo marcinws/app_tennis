@@ -25,6 +25,7 @@ export const MATCH_ERROR_MESSAGES = {
   advantage_invalid: "Wybierz, czy gemy są z przewagami",
   tournament_empty: "Wpisz nazwę turnieju",
   tournament_already_set: "Nazwa turnieju jest już uzupełniona",
+  match_not_found: "Nie znaleziono meczu",
   not_configured: "Supabase nie jest skonfigurowany",
 } as const;
 
@@ -103,4 +104,18 @@ export function matchErrorMessage(code: string | null): string | null {
   return code !== null && Object.hasOwn(MATCH_ERROR_MESSAGES, code)
     ? MATCH_ERROR_MESSAGES[code as MatchErrorCode]
     : null;
+}
+
+// The match history shows at most this many of the newest matches.
+export const MATCH_HISTORY_LIMIT = 200;
+
+export type HistoryNotice = { kind: "deleted" } | { kind: "error"; message: string } | null;
+
+// Notice on the match history after a delete: `?deleted=1` or a known `?error=` code.
+export function historyNotice(params: URLSearchParams): HistoryNotice {
+  const message = matchErrorMessage(params.get("error"));
+  if (message !== null) {
+    return { kind: "error", message };
+  }
+  return params.get("deleted") === "1" ? { kind: "deleted" } : null;
 }
