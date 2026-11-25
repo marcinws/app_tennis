@@ -264,8 +264,8 @@ Migracja tylko dodaje tabele, klucze unikalne i zmienia jedną politykę. Istnie
 
 #### Automated
 
-- [ ] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
-- [ ] 3.2 CI na PR zielone, w tym nowe kroki smoke
+- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs` — ca46eeb
+- [x] 3.2 CI na PR zielone, w tym nowe kroki smoke — ca46eeb
 
 #### Manual
 
