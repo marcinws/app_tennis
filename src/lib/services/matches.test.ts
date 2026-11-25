@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { matchErrorMessage, matchFormatLabel, parseMatchStart, parseTournamentName } from "./matches";
+import { historyNotice, matchErrorMessage, matchFormatLabel, parseMatchStart, parseTournamentName } from "./matches";
 
 describe("parseTournamentName", () => {
   it.each([
@@ -112,4 +112,21 @@ describe("matchErrorMessage", () => {
       expect(matchErrorMessage(code)).toBeNull();
     },
   );
+});
+
+describe("historyNotice", () => {
+  it("reports a deleted match", () => {
+    expect(historyNotice(new URLSearchParams("deleted=1"))).toEqual({ kind: "deleted" });
+  });
+
+  it("shows the fixed message of a known error", () => {
+    expect(historyNotice(new URLSearchParams("error=match_not_found"))).toEqual({
+      kind: "error",
+      message: "Nie znaleziono meczu",
+    });
+  });
+
+  it.each(["", "error=whatever", "deleted=yes", "deleted=0"])("shows nothing for %j", (query) => {
+    expect(historyNotice(new URLSearchParams(query))).toBeNull();
+  });
 });
