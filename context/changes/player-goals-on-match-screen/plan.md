@@ -233,20 +233,20 @@ Migracja addytywna: nowa tabela, funkcja i wyzwalacz. Poprzednia wersja Workera 
 
 #### Manual
 
-- [ ] 2.5 Na telefonie: dodanie, zmiana i zakończenie celu; przy 3 aktywnych formularz dodawania zastąpiony komunikatem
-- [ ] 2.6 Na telefonie: ekran meczu pokazuje aktywne cele nad wynikiem i nie spycha przycisków punktów poza ekran
+- [x] 2.5 Na telefonie: dodanie, zmiana i zakończenie celu; przy 3 aktywnych formularz dodawania zastąpiony komunikatem
+- [x] 2.6 Na telefonie: ekran meczu pokazuje aktywne cele nad wynikiem i nie spycha przycisków punktów poza ekran
 
 ### Phase 3: Smoke i wdrożenie
 
 #### Automated
 
-- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
-- [ ] 3.2 CI na PR zielone, w tym nowe kroki smoke
+- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs` — 59e9f67
+- [x] 3.2 CI na PR zielone, w tym nowe kroki smoke — 59e9f67
 
 #### Manual
 
-- [ ] 3.3 Ustawienia produkcyjnego projektu Supabase sprawdzone przed `db push`
-- [ ] 3.4 `npx supabase db push` na produkcji przed merge
-- [ ] 3.5 Po merge job `deploy` i smoke produkcyjny zielone
-- [ ] 3.6 Na telefonie na produkcji: cele dodane i widoczne na ekranie meczu
-- [ ] 3.7 Dziennik wdrożeń uzupełniony
+- [x] 3.3 Ustawienia produkcyjnego projektu Supabase sprawdzone przed `db push`
+- [x] 3.4 `npx supabase db push` na produkcji przed merge
+- [x] 3.5 Po merge job `deploy` i smoke produkcyjny zielone
+- [x] 3.6 Na telefonie na produkcji: cele dodane i widoczne na ekranie meczu
+- [x] 3.7 Dziennik wdrożeń uzupełniony

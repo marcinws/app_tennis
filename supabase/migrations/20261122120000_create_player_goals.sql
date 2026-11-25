@@ -47,6 +47,8 @@ set search_path = ''
 as $$
 begin
   if new.active and (tg_op = 'INSERT' or not old.active) then
+    -- for update needs authenticated to keep update on a players column (update (name) from 20261117160000);
+    -- revoking it makes every goal add fail with 42501.
     perform 1 from public.players where id = new.player_id for update;
     if (
       select count(*) from public.player_goals

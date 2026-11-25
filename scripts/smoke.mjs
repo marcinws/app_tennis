@@ -15,7 +15,12 @@ const PLAYER_NAME = "Smoke Player";
 const TOURNAMENT_NAME = "Smoke Cup";
 // Three goals fill the active-goal limit; plain text so the pages render them verbatim.
 const GOAL_TEXTS = ["Smoke goal serve", "Smoke goal return", "Smoke goal volley"];
+// Contains GOAL_TEXTS[0], so the match page check below still finds it after the edit.
+const EDITED_GOAL_TEXT = "Smoke goal serve edited";
+const REPLACEMENT_GOAL_TEXT = "Smoke goal replacement";
 let playerAId;
+// Goal ids of account A by goal text, read from the goal forms; account B later tries to end one.
+const goalIds = new Map();
 let matchAId;
 // Account A's short-set match without advantage, started after the last-match link check.
 let shortMatchId;
@@ -75,6 +80,29 @@ function addGoalToCapturedPlayer(text) {
 function requestCapturedPlayerGoals() {
   if (!playerAId) throw new Error("Player id of account A was not captured");
   return request(`/players/${playerAId}`);
+}
+
+// Reads the goal ids of account A from the edit forms on /players/<id>.
+// Throws instead of failing the step, because the edit and RLS checks after it depend on the ids.
+async function captureGoalIds() {
+  const actual = await requestCapturedPlayerGoals();
+  const forms = actual.body.matchAll(
+    /<form[^>]*action="\/api\/players\/[0-9a-f-]{36}\/goals\/([0-9a-f-]{36})"[^>]*>([\s\S]*?)<\/form>/g,
+  );
+  for (const [, id, inner] of forms) {
+    const text = GOAL_TEXTS.find((goalText) => inner.includes(`value="${goalText}"`));
+    if (text) goalIds.set(text, id);
+  }
+  const missing = GOAL_TEXTS.filter((text) => !goalIds.has(text));
+  if (missing.length > 0) throw new Error(`No edit form for goals ${missing.join(", ")} (status ${actual.status})`);
+  return actual;
+}
+
+// Saves or ends one of account A's goals; throws when its id was not captured.
+function changeCapturedGoal(text, form) {
+  const goalId = goalIds.get(text);
+  if (!playerAId || !goalId) throw new Error(`Id of goal "${text}" of account A was not captured`);
+  return request(`/api/players/${playerAId}/goals/${goalId}`, { method: "POST", form });
 }
 
 // Starts a match for account A's player. Throws when the player id was not captured, so a missing id cannot pass as a rejected start.
@@ -240,6 +268,44 @@ const fullSteps = [
     },
   ],
   ["goals page lists the goals", requestCapturedPlayerGoals, { status: 200, text: GOAL_TEXTS[0] }],
+  ["goal ids are read from the goal forms", captureGoalIds, { status: 200 }],
+  [
+    "a goal text is changed",
+    () => changeCapturedGoal(GOAL_TEXTS[0], { action: "save", text: EDITED_GOAL_TEXT }),
+    {
+      status: 302,
+      get location() {
+        return `/players/${playerAId}`;
+      },
+    },
+  ],
+  ["goals page shows the changed goal", requestCapturedPlayerGoals, { status: 200, text: EDITED_GOAL_TEXT }],
+  [
+    "a goal is ended",
+    () => changeCapturedGoal(GOAL_TEXTS[1], { action: "end", text: GOAL_TEXTS[1] }),
+    {
+      status: 302,
+      get location() {
+        return `/players/${playerAId}`;
+      },
+    },
+  ],
+  // The redirect prefix also matches an error redirect, so the page check below proves the slot was freed.
+  [
+    "ending a goal frees a slot",
+    () => addGoalToCapturedPlayer(REPLACEMENT_GOAL_TEXT),
+    {
+      status: 302,
+      get location() {
+        return `/players/${playerAId}`;
+      },
+    },
+  ],
+  [
+    "goals page lists the new goal without the ended one",
+    requestCapturedPlayerGoals,
+    { status: 200, text: REPLACEMENT_GOAL_TEXT, absent: GOAL_TEXTS[1] },
+  ],
   ["new match form lists the player", () => request("/matches/new"), { status: 200, text: PLAYER_NAME }],
   ["starting a match redirects to the match", startAndCaptureMatch, { status: 302, location: "/matches/" }],
   ["match page shows the tournament", requestCapturedMatch, { status: 200, text: TOURNAMENT_NAME }],
@@ -353,6 +419,16 @@ const fullSteps = [
     { status: 404 },
   ],
   ["second account cannot open another account's goals page", requestCapturedPlayerGoals, { status: 404 }],
+  [
+    "second account cannot end another account's goal",
+    () => changeCapturedGoal(GOAL_TEXTS[0], { action: "end", text: "" }),
+    {
+      status: 302,
+      get location() {
+        return `/players/${playerAId}?error=goal_not_found`;
+      },
+    },
+  ],
   ["second account cannot open first account's match", requestCapturedMatch, { status: 404 }],
   [
     "second account cannot save first account's match log",
@@ -379,6 +455,7 @@ const fullSteps = [
     () => request("/players"),
     { status: 200, text: PLAYER_NAME, absent: "Smoke Hijacked" },
   ],
+  ["first account's goal stays active", requestCapturedPlayerGoals, { status: 200, text: EDITED_GOAL_TEXT }],
 ];
 
 // Read-only checks: a sign-in attempt for an account that does not exist proves the Worker reaches Supabase.
