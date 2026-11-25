@@ -168,7 +168,15 @@ export default function MatchRecorder({
 
       {state &&
         (state.winner ? (
-          <p className="text-lg font-semibold">Mecz zakończony — wygrywa {names[state.winner]}</p>
+          <div className="space-y-2">
+            <p className="text-lg font-semibold">Mecz zakończony — wygrywa {names[state.winner]}</p>
+            <a
+              href={`/matches/${encodeURIComponent(matchId)}/summary`}
+              className="inline-flex min-h-12 items-center rounded-md bg-purple-600 px-4 font-medium text-white hover:bg-purple-500"
+            >
+              Zobacz podsumowanie
+            </a>
+          </div>
         ) : (
           <p className="text-sm text-blue-100/80">Serwuje: {names[state.server]}</p>
         ))}

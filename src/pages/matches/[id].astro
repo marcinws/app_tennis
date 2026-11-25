@@ -161,9 +161,17 @@ const firstServer = match.first_server === "player" ? match.player.name : "Przec
           </div>
         </dl>
 
-        <a href="/matches/new" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
-          Nowy mecz
-        </a>
+        <div class="flex gap-4">
+          <a
+            href={`/matches/${match.id}/summary`}
+            class="text-purple-300 transition-colors hover:text-purple-100 hover:underline"
+          >
+            Podsumowanie meczu
+          </a>
+          <a href="/matches/new" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+            Nowy mecz
+          </a>
+        </div>
       </div>
     </div>
   </div>
