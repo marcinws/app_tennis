@@ -261,7 +261,7 @@ Tylko `grant update (tournament_name)`. Wycofanie kodu jest bezpieczne, bo poprz
 
 #### Manual
 
-- [ ] 3.3 `npx supabase db push` na produkcji przed merge, potwierdzony przez `npx supabase migration list --linked`
-- [ ] 3.4 Po merge job `deploy` i smoke produkcyjny zielone
+- [x] 3.3 `npx supabase db push` na produkcji przed merge, potwierdzony przez `npx supabase migration list --linked`
+- [x] 3.4 Po merge job `deploy` i smoke produkcyjny zielone — c0edb1e
 - [ ] 3.5 Na telefonie na produkcji: podsumowanie prawdziwego meczu poprawne
-- [ ] 3.6 Dziennik wdrożeń uzupełniony
+- [x] 3.6 Dziennik wdrożeń uzupełniony
