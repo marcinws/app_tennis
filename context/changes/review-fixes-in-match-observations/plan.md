@@ -96,7 +96,7 @@ Przegląd `/code-review 13` (PR #13, S-07) znalazł dwa błędy, które przy sł
 - [x] 1.3 Lint przechodzi: `npm run lint` — 4a12fb8
 - [x] 1.4 Typy przechodzą: `npx astro check` — 4a12fb8
 - [x] 1.5 Build przechodzi: `npm run build` — 4a12fb8
-- [ ] 1.6 CI na PR zielone
+- [x] 1.6 CI na PR zielone — 4a12fb8
 
 #### Manual
 
