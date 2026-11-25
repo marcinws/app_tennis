@@ -269,8 +269,8 @@ Migracja tylko dodaje tabele, klucze unikalne i zmienia jedną politykę. Istnie
 
 #### Manual
 
-- [ ] 3.3 Ustawienia produkcyjnego projektu Supabase sprawdzone przed `db push`
-- [ ] 3.4 `npx supabase db push` na produkcji przed merge
-- [ ] 3.5 Po merge job `deploy` i smoke produkcyjny zielone
+- [x] 3.3 Ustawienia produkcyjnego projektu Supabase sprawdzone przed `db push`
+- [x] 3.4 `npx supabase db push` na produkcji przed merge
+- [x] 3.5 Po merge job `deploy` i smoke produkcyjny zielone — 3ee8db2
 - [ ] 3.6 Na telefonie na produkcji: obserwacje i notatki zapisane w meczu
-- [ ] 3.7 Dziennik wdrożeń uzupełniony
+- [x] 3.7 Dziennik wdrożeń uzupełniony
