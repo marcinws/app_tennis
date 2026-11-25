@@ -175,6 +175,11 @@ function fillTournamentName(matchId, name) {
   return request(`/api/matches/${matchId}/tournament`, { method: "POST", form: { tournament_name: name } });
 }
 
+function deleteMatch(matchId) {
+  if (!matchId) throw new Error("Match id of account A was not captured");
+  return request(`/api/matches/${matchId}/delete`, { method: "POST" });
+}
+
 function saveShortMatchLog(baseRevision, events) {
   if (!shortMatchId) throw new Error("Short-set match id of account A was not captured");
   return request(`/api/matches/${shortMatchId}/log`, { method: "PUT", json: { base_revision: baseRevision, events } });
@@ -529,6 +534,17 @@ const fullSteps = [
     },
   ],
   ["a match without a tournament starts", startAndCaptureUnnamedMatch, { status: 302, location: "/matches/" }],
+  [
+    "match history lists the match",
+    () => request("/matches"),
+    {
+      status: 200,
+      // Getter: the match id is captured by an earlier step, after this array is built.
+      get text() {
+        return `href="/matches/${matchAId}/summary"`;
+      },
+    },
+  ],
   ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, location: "/" }],
   ["dashboard redirects after signout", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
   // Account B checks that RLS hides and protects account A's players.
@@ -576,6 +592,12 @@ const fullSteps = [
   ],
   ["second account has no last match", () => request("/matches/new"), { status: 200, absent: TOURNAMENT_NAME }],
   ["second account cannot open first account's summary", () => requestSummary(matchAId), { status: 404 }],
+  ["match history of second account is empty", () => request("/matches"), { status: 200, text: "Brak meczów" }],
+  [
+    "second account cannot delete first account's match",
+    () => deleteMatch(matchAId),
+    { status: 302, location: "/matches?error=match_not_found" },
+  ],
   [
     "second account cannot fill in first account's tournament name",
     () => fillTournamentName(unnamedMatchId, "Smoke Hijacked Cup"),
@@ -629,6 +651,28 @@ const fullSteps = [
     () => requestSummary(unnamedMatchId),
     { status: 200, text: 'name="tournament_name"', absent: "Smoke Hijacked Cup" },
   ],
+  ["first account's match survives the foreign delete", () => requestSummary(matchAId), { status: 200 }],
+  // Match A has observations and notes, so the delete only passes when they cascade with it.
+  [
+    "a match with observations and notes is deleted",
+    () => deleteMatch(matchAId),
+    { status: 302, location: "/matches?deleted=1" },
+  ],
+  ["summary of the deleted match is gone", () => requestSummary(matchAId), { status: 404 }],
+  [
+    "match history drops the deleted match",
+    () => request("/matches"),
+    {
+      status: 200,
+      // The other matches of account A stay.
+      get text() {
+        return `href="/matches/${shortMatchId}/summary"`;
+      },
+      get absent() {
+        return `href="/matches/${matchAId}/summary"`;
+      },
+    },
+  ],
 ];
 
 // Read-only checks: a sign-in attempt for an account that does not exist proves the Worker reaches Supabase.
@@ -657,6 +701,7 @@ const productionSteps = [
       }),
     { status: 302, location: "/auth/signin" },
   ],
+  ["match history redirects anonymous user", () => request("/matches"), { status: 302, location: "/auth/signin" }],
   [
     "match summary redirects anonymous user",
     () => request(`/matches/${randomUUID()}/summary`),

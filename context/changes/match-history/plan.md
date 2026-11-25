@@ -195,18 +195,18 @@ Polityka i `grant delete`. Wycofanie kodu jest bezpieczne, bo poprzednia wersja 
 
 #### Automated
 
-- [ ] 1.1 Testy przechodzą: `npm test`
-- [ ] 1.2 Lint przechodzi: `npm run lint`
-- [ ] 1.3 Typy przechodzą: `npx astro check`
+- [x] 1.1 Testy przechodzą: `npm test` — 397c3c0
+- [x] 1.2 Lint przechodzi: `npm run lint` — 397c3c0
+- [x] 1.3 Typy przechodzą: `npx astro check` — 397c3c0
 
 ### Phase 2: Lista, usuwanie i nawigacja
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Typy przechodzą: `npx astro check`
-- [ ] 2.4 Build przechodzi: `npm run build`
+- [x] 2.1 Testy przechodzą: `npm test` — 2febe04
+- [x] 2.2 Lint przechodzi: `npm run lint` — 2febe04
+- [x] 2.3 Typy przechodzą: `npx astro check` — 2febe04
+- [x] 2.4 Build przechodzi: `npm run build` — 2febe04
 
 #### Manual
 
