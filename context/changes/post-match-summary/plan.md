@@ -256,8 +256,8 @@ Tylko `grant update (tournament_name)`. Wycofanie kodu jest bezpieczne, bo poprz
 
 #### Automated
 
-- [ ] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
-- [ ] 3.2 CI na PR zielone, w tym nowe kroki smoke
+- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs` — 5f2e1cc
+- [x] 3.2 CI na PR zielone, w tym nowe kroki smoke — 5f2e1cc
 
 #### Manual
 
