@@ -216,8 +216,8 @@ Polityka i `grant delete`. Wycofanie kodu jest bezpieczne, bo poprzednia wersja 
 
 #### Automated
 
-- [ ] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs`
-- [ ] 3.2 CI na PR zielone, w tym nowe kroki smoke
+- [x] 3.1 Składnia smoke poprawna: `node --check scripts/smoke.mjs` — 8d4a2fa
+- [x] 3.2 CI na PR zielone, w tym nowe kroki smoke — 8d4a2fa
 
 #### Manual
 
