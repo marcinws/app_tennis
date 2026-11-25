@@ -1,3 +1,4 @@
+import type { MatchNote, MatchObservation } from "../../types";
 import type { SyncResponse } from "./match-sync";
 
 // Must equal the `check` on match_notes.text in the observations and notes migration.
@@ -28,27 +29,15 @@ export function parseNoteText(raw: string): ParseNoteTextResult {
   return { ok: true, text };
 }
 
-export interface Observation {
-  id: string;
-  goal_id: string;
-}
-
-export interface Note {
-  id: string;
-  text: string;
-  // Server time once saved; the phone's time for a note still in the queue.
-  created_at: string;
-}
-
 export interface MatchNotesState {
-  observations: Observation[];
-  notes: Note[];
+  observations: MatchObservation[];
+  notes: MatchNote[];
 }
 
 export type NotesOp =
-  | { type: "put_observation"; observation: Observation }
+  | { type: "put_observation"; observation: MatchObservation }
   | { type: "delete_observation"; id: string }
-  | { type: "put_note"; note: Note }
+  | { type: "put_note"; note: MatchNote }
   | { type: "delete_note"; id: string };
 
 // The phone's copy: operations the server has not confirmed yet, oldest first.
@@ -110,12 +99,13 @@ function putTypeFor(op: NotesOp): NotesOp["type"] | null {
   return null;
 }
 
-// Appends an operation. Deleting an entry whose add is still waiting (not in flight) drops both,
-// so the server never sees either. An add already in flight may reach the server, so the delete stays.
-export function enqueue(queue: readonly NotesOp[], op: NotesOp, inFlightId: string | null): NotesOp[] {
+// Appends an operation. Deleting an entry whose add was never sent drops both, so the server never sees
+// either. An add sent at least once (in flight, or waiting for a retry after a lost response) may already
+// be on the server, so its delete stays. `sentIds` holds the ids of every add sent at least once.
+export function enqueue(queue: readonly NotesOp[], op: NotesOp, sentIds: ReadonlySet<string>): NotesOp[] {
   const putType = putTypeFor(op);
   const id = opId(op);
-  if (putType !== null && id !== inFlightId) {
+  if (putType !== null && !sentIds.has(id)) {
     const index = queue.findIndex((queued) => queued.type === putType && opId(queued) === id);
     if (index !== -1) {
       return [...queue.slice(0, index), ...queue.slice(index + 1)];
@@ -223,9 +213,34 @@ export function interpretNotesResponse(response: SyncResponse): NotesSyncOutcome
   if (status === 401) {
     return { kind: "unauthorized" };
   }
+  // A timeout or a rate limit passes; dropping the entry for it would lose the parent's data.
+  if (status === 408 || status === 429) {
+    return { kind: "retry", reason: errorCode(body, status) };
+  }
   // A retry cannot fix any other client error.
   if (status >= 400 && status < 500) {
     return { kind: "rejected", error: errorCode(body, status) };
   }
   return { kind: "retry", reason: errorCode(body, status) };
+}
+
+// Rejected operations kept on the phone as evidence; only the newest stay, so the list cannot fill storage.
+export const MAX_REJECTED_ENTRIES = 50;
+
+export interface RejectedEntry {
+  op: NotesOp;
+  error: string;
+}
+
+// Adds an entry to the stored `:rejected` list and returns the new raw value.
+export function appendRejected(raw: string | null, entry: RejectedEntry): string {
+  let previous: unknown;
+  try {
+    previous = JSON.parse(raw ?? "[]");
+  } catch {
+    // An unreadable list is evidence of nothing; it is replaced by a fresh one.
+    previous = [];
+  }
+  const list: unknown[] = Array.isArray(previous) ? (previous as unknown[]) : [];
+  return JSON.stringify([...list, entry].slice(-MAX_REJECTED_ENTRIES));
 }

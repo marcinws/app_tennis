@@ -3,14 +3,13 @@ import { Button } from "@/components/ui/button";
 import { type MatchNotesStatus, useMatchNotes } from "@/components/hooks/useMatchNotes";
 import {
   lastObservationId,
-  type Note,
   NOTE_ERROR_MESSAGES,
   NOTE_TEXT_MAX_LENGTH,
-  type Observation,
   observationCount,
   parseNoteText,
 } from "@/lib/services/match-notes";
 import { cn } from "@/lib/utils";
+import type { MatchNote, MatchObservation } from "@/types";
 
 interface Goal {
   id: string;
@@ -23,8 +22,8 @@ interface Props {
   matchId: string;
   playerId: string;
   goals: Goal[];
-  initialObservations: Observation[];
-  initialNotes: Note[];
+  initialObservations: MatchObservation[];
+  initialNotes: MatchNote[];
 }
 
 function statusText(status: MatchNotesStatus): string | null {
@@ -54,17 +53,19 @@ function noteTime(createdAt: string): string {
 }
 
 export default function MatchNotes({ matchId, playerId, goals, initialObservations, initialNotes }: Props) {
-  const { ready, state, pending, status, addObservation, removeObservation, addNote, removeNote } = useMatchNotes({
-    matchId,
-    initialObservations,
-    initialNotes,
-  });
+  const { ready, state, pending, status, addObservation, removeObservation, addNote, removeNote, dismissRejected } =
+    useMatchNotes({
+      matchId,
+      initialObservations,
+      initialNotes,
+    });
   const [notesOpen, setNotesOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [draftError, setDraftError] = useState<string | null>(null);
   const notesPanelId = useId();
   const noteInputId = useId();
   const message = statusText(status);
+  const overLimit = Array.from(draft).length > NOTE_TEXT_MAX_LENGTH;
 
   const submitNote = () => {
     const parsed = parseNoteText(draft);
@@ -166,7 +167,6 @@ export default function MatchNotes({ matchId, playerId, goals, initialObservatio
               id={noteInputId}
               type="text"
               value={draft}
-              maxLength={NOTE_TEXT_MAX_LENGTH}
               placeholder="Krótka notatka"
               aria-invalid={draftError !== null}
               aria-describedby={`${noteInputId}-hint`}
@@ -180,7 +180,11 @@ export default function MatchNotes({ matchId, playerId, goals, initialObservatio
               Dodaj
             </Button>
           </form>
-          <p id={`${noteInputId}-hint`} className={cn("text-xs", draftError ? "text-red-200" : "text-blue-100/60")}>
+          {/* No maxLength: it counts UTF-16 units, the limit counts characters like parseNoteText and Postgres. */}
+          <p
+            id={`${noteInputId}-hint`}
+            className={cn("text-xs", draftError || overLimit ? "text-red-200" : "text-blue-100/60")}
+          >
             {draftError ?? `${Array.from(draft).length}/${NOTE_TEXT_MAX_LENGTH}`}
           </p>
           {state.notes.length > 0 && (
@@ -211,9 +215,16 @@ export default function MatchNotes({ matchId, playerId, goals, initialObservatio
         </div>
       )}
 
-      <p role="status" className={cn("text-xs text-yellow-200", message === null && "sr-only")}>
-        {ready ? (message ?? "Obserwacje zapisane") : "Wczytywanie obserwacji z telefonu…"}
-      </p>
+      <div className={cn("flex items-center gap-2", message === null && "sr-only")}>
+        <p role="status" className="text-xs text-yellow-200">
+          {ready ? (message ?? "Obserwacje zapisane") : "Wczytywanie obserwacji z telefonu…"}
+        </p>
+        {status.kind === "rejected" && (
+          <button type="button" className="text-xs text-purple-300 hover:underline" onClick={dismissRejected}>
+            OK
+          </button>
+        )}
+      </div>
     </section>
   );
 }

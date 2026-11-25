@@ -11,6 +11,8 @@ import {
   NOTE_TEXT_MAX_LENGTH,
   type NotesOp,
   notesStorageKey,
+  appendRejected,
+  MAX_REJECTED_ENTRIES,
   observationCount,
   parseNoteText,
   parseStoredNotes,
@@ -85,23 +87,30 @@ describe("applyQueue on the server state", () => {
 
 describe("enqueue", () => {
   it("drops both the waiting add and its delete", () => {
-    const queue = enqueue([putObs(OBS_1), putObs(OBS_2)], { type: "delete_observation", id: OBS_2 }, OBS_1);
+    const queue = enqueue([putObs(OBS_1), putObs(OBS_2)], { type: "delete_observation", id: OBS_2 }, new Set([OBS_1]));
     expect(queue).toEqual([putObs(OBS_1)]);
   });
 
   it("keeps the delete when the add is in flight", () => {
     const deleteOp: NotesOp = { type: "delete_note", id: NOTE_1 };
-    expect(enqueue([putNote(NOTE_1)], deleteOp, NOTE_1)).toEqual([putNote(NOTE_1), deleteOp]);
+    expect(enqueue([putNote(NOTE_1)], deleteOp, new Set([NOTE_1]))).toEqual([putNote(NOTE_1), deleteOp]);
+  });
+
+  // Regression (review of S-07): an add whose response was lost may already be on the server
+  // while it waits for a retry, so dropping it with its delete would leave the entry there.
+  it("keeps the delete when the add was sent before and now waits for a retry", () => {
+    const deleteOp: NotesOp = { type: "delete_observation", id: OBS_2 };
+    expect(enqueue([putObs(OBS_2)], deleteOp, new Set([OBS_2]))).toEqual([putObs(OBS_2), deleteOp]);
   });
 
   it("queues the delete of an entry the server already has", () => {
     const deleteOp: NotesOp = { type: "delete_observation", id: OBS_3 };
-    expect(enqueue([], deleteOp, null)).toEqual([deleteOp]);
+    expect(enqueue([], deleteOp, new Set())).toEqual([deleteOp]);
   });
 
   it("does not cancel an add of the other kind with the same id", () => {
     const deleteOp: NotesOp = { type: "delete_note", id: OBS_1 };
-    expect(enqueue([putObs(OBS_1)], deleteOp, null)).toEqual([putObs(OBS_1), deleteOp]);
+    expect(enqueue([putObs(OBS_1)], deleteOp, new Set())).toEqual([putObs(OBS_1), deleteOp]);
   });
 });
 
@@ -188,11 +197,41 @@ describe("interpretNotesResponse", () => {
     });
   });
 
+  // Regression (review of S-07): a timeout or rate limit is temporary, so dropping the entry loses data.
+  it.each([408, 429])("retries a temporary %i", (status) => {
+    expect(interpretNotesResponse({ kind: "http", status, body: null })).toEqual({
+      kind: "retry",
+      reason: `http_${status}`,
+    });
+  });
+
   it("retries network and server errors", () => {
     expect(interpretNotesResponse({ kind: "network_error" })).toEqual({ kind: "retry", reason: "network_error" });
     expect(interpretNotesResponse({ kind: "http", status: 500, body: { error: "save_failed" } })).toEqual({
       kind: "retry",
       reason: "save_failed",
     });
+  });
+});
+
+describe("appendRejected", () => {
+  const entry = (n: number) => ({ op: putObs(OBS_1), error: `e${n}` });
+
+  it("starts a list when there is none or it is unreadable", () => {
+    expect(JSON.parse(appendRejected(null, entry(1)))).toEqual([entry(1)]);
+    expect(JSON.parse(appendRejected("{", entry(1)))).toEqual([entry(1)]);
+    expect(JSON.parse(appendRejected('{"a":1}', entry(1)))).toEqual([entry(1)]);
+  });
+
+  // Regression (review of S-07): an unbounded list can fill localStorage and break every save.
+  it("keeps only the newest entries", () => {
+    let raw: string | null = null;
+    for (let n = 0; n < MAX_REJECTED_ENTRIES + 5; n++) {
+      raw = appendRejected(raw, entry(n));
+    }
+    const list = JSON.parse(raw ?? "[]") as { error: string }[];
+    expect(list).toHaveLength(MAX_REJECTED_ENTRIES);
+    expect(list.at(-1)?.error).toBe(`e${MAX_REJECTED_ENTRIES + 4}`);
+    expect(list[0].error).toBe("e5");
   });
 });

@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import {
+  appendRejected,
   applyOp,
   applyQueue,
   enqueue,
   interpretNotesResponse,
   type MatchNotesState,
-  type Note,
   type NotesOp,
   notesStorageKey,
-  type Observation,
   opId,
   parseStoredNotes,
   pendingIds,
   serializeStoredNotes,
 } from "@/lib/services/match-notes";
 import { retryDelayMs, type SyncResponse } from "@/lib/services/match-sync";
+import type { MatchNote, MatchObservation } from "@/types";
 
 export type MatchNotesStatusKind = "saved" | "waiting" | "error" | "unauthorized" | "rejected";
 
@@ -71,6 +71,11 @@ function createMatchNotesStore(matchId: string, initial: MatchNotesState) {
   let corruptCopy = false;
   // Set by unauthorized; cleared by the next action, a reload, or the network coming back.
   let stopped = false;
+  // Ids of adds sent at least once; such an add may be on the server even while it waits for a retry.
+  // Adds read back from the phone count as sent, because an earlier page may have sent them.
+  const sentIds = new Set<string>();
+  // Rejections stay on screen until the parent dismisses them, so a later save cannot hide them.
+  let rejectedNotice: { count: number; detail: string } | null = null;
   let attempt = 0;
   // Each start() gets a new generation; responses from an older one are dropped.
   let generation = 0;
@@ -84,7 +89,10 @@ function createMatchNotesStore(matchId: string, initial: MatchNotesState) {
   function emit() {
     const quiet = syncStatus.kind === "saved" || syncStatus.kind === "waiting";
     let status = syncStatus;
-    if (quiet && storageFailed) {
+    if (quiet && rejectedNotice !== null) {
+      const { count, detail } = rejectedNotice;
+      status = { kind: "rejected", detail: count > 1 ? `${detail}, razem ${count}` : detail };
+    } else if (quiet && storageFailed) {
       status = { kind: "error", detail: STORAGE_FAILED_DETAIL, local: true };
     } else if (quiet && corruptCopy) {
       status = { kind: "error", detail: CORRUPT_COPY_DETAIL, local: true };
@@ -116,9 +124,7 @@ function createMatchNotesStore(matchId: string, initial: MatchNotesState) {
   function keepRejected(op: NotesOp, error: string) {
     try {
       const rejectedKey = `${key}:rejected`;
-      const previous: unknown = JSON.parse(localStorage.getItem(rejectedKey) ?? "[]");
-      const list: unknown[] = Array.isArray(previous) ? (previous as unknown[]) : [];
-      localStorage.setItem(rejectedKey, JSON.stringify([...list, { op, error }]));
+      localStorage.setItem(rejectedKey, appendRejected(localStorage.getItem(rejectedKey), { op, error }));
     } catch (storageError) {
       // eslint-disable-next-line no-console -- no error tracker yet; the rejection itself is logged by the caller
       console.error("Failed to keep the rejected match note operation", storageError);
@@ -173,6 +179,7 @@ function createMatchNotesStore(matchId: string, initial: MatchNotesState) {
     const myGeneration = generation;
     const op = queue[0];
     inFlight = op;
+    sentIds.add(opId(op));
     const response = await send(op);
     if (myGeneration !== generation) {
       return;
@@ -197,7 +204,8 @@ function createMatchNotesStore(matchId: string, initial: MatchNotesState) {
         keepRejected(op, outcome.error);
         attempt = 0;
         persist(queue.slice(1));
-        syncStatus = { kind: "rejected", detail: outcome.error };
+        rejectedNotice = { count: (rejectedNotice?.count ?? 0) + 1, detail: outcome.error };
+        syncStatus = queue.length === 0 ? { kind: "saved" } : { kind: "waiting" };
         emit();
         void sync();
         return;
@@ -234,7 +242,7 @@ function createMatchNotesStore(matchId: string, initial: MatchNotesState) {
     if (!ready) {
       return;
     }
-    persist(enqueue(queue, op, inFlight === null ? null : opId(inFlight)));
+    persist(enqueue(queue, op, sentIds));
     // A new action is the user's retry after an expired session.
     stopped = false;
     attempt = 0;
@@ -267,6 +275,9 @@ function createMatchNotesStore(matchId: string, initial: MatchNotesState) {
       const parsed = parseStoredNotes(raw);
       if (parsed.ok) {
         queue = parsed.stored?.queue ?? [];
+        for (const op of queue) {
+          sentIds.add(opId(op));
+        }
       } else {
         // eslint-disable-next-line no-console -- no error tracker yet; the raw copy is kept for inspection
         console.error("Corrupt match notes on the device, starting from the server copy", { matchId });
@@ -302,8 +313,13 @@ function createMatchNotesStore(matchId: string, initial: MatchNotesState) {
     },
 
     addObservation(goalId: string) {
-      const observation: Observation = { id: crypto.randomUUID(), goal_id: goalId };
+      const observation: MatchObservation = { id: crypto.randomUUID(), goal_id: goalId };
       change({ type: "put_observation", observation });
+    },
+
+    dismissRejected() {
+      rejectedNotice = null;
+      emit();
     },
 
     removeObservation(id: string) {
@@ -312,7 +328,7 @@ function createMatchNotesStore(matchId: string, initial: MatchNotesState) {
 
     // `text` must already be normalized by parseNoteText.
     addNote(text: string) {
-      const note: Note = { id: crypto.randomUUID(), text, created_at: new Date().toISOString() };
+      const note: MatchNote = { id: crypto.randomUUID(), text, created_at: new Date().toISOString() };
       change({ type: "put_note", note });
     },
 
@@ -328,8 +344,8 @@ export function useMatchNotes({
   initialNotes,
 }: {
   matchId: string;
-  initialObservations: Observation[];
-  initialNotes: Note[];
+  initialObservations: MatchObservation[];
+  initialNotes: MatchNote[];
 }) {
   // Created once per mount; the server props only seed the confirmed state.
   const [store] = useState(() =>
@@ -356,6 +372,9 @@ export function useMatchNotes({
     },
     [store],
   );
+  const dismissRejected = useCallback(() => {
+    store.dismissRejected();
+  }, [store]);
   const addNote = useCallback(
     (text: string) => {
       store.addNote(text);
@@ -369,5 +388,5 @@ export function useMatchNotes({
     [store],
   );
 
-  return { ...snapshot, addObservation, removeObservation, addNote, removeNote };
+  return { ...snapshot, addObservation, removeObservation, addNote, removeNote, dismissRejected };
 }
