@@ -3,10 +3,11 @@ import { z } from "astro/zod";
 import Layout from "@/layouts/Layout.astro";
 import Topbar from "@/components/Topbar.astro";
 import { createClient } from "@/lib/supabase";
+import MatchNotes from "@/components/match/MatchNotes";
 import MatchRecorder from "@/components/match/MatchRecorder";
 import { isMatchFormatId, matchFormatLabel } from "@/lib/services/matches";
 import { parseMatchActions } from "@/lib/services/scoring";
-import type { Match, PlayerGoal } from "@/types";
+import type { Match, MatchNote, MatchObservation, PlayerGoal } from "@/types";
 
 function notFound() {
   return new Response("Nie znaleziono meczu", { status: 404 });
@@ -57,13 +58,43 @@ if (!parsedLog.ok) {
   return loadFailed();
 }
 
-const { data: goals, error: goalsError } = await supabase
-  .from("player_goals")
-  .select("id, text, created_at")
-  .eq("player_id", match.player.id)
-  .eq("active", true)
+const { data: observations, error: observationsError } = await supabase
+  .from("match_observations")
+  .select("id, goal_id")
+  .eq("match_id", match.id)
   .order("created_at", { ascending: true })
-  .overrideTypes<PlayerGoal[], { merge: false }>();
+  .overrideTypes<MatchObservation[], { merge: false }>();
+if (observationsError) {
+  // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
+  console.error("Failed to load observations for match", { id: match.id, error: observationsError });
+  return loadFailed();
+}
+
+const { data: notes, error: notesError } = await supabase
+  .from("match_notes")
+  .select("id, text, created_at")
+  .eq("match_id", match.id)
+  .order("created_at", { ascending: true })
+  .overrideTypes<MatchNote[], { merge: false }>();
+if (notesError) {
+  // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
+  console.error("Failed to load notes for match", { id: match.id, error: notesError });
+  return loadFailed();
+}
+
+// Active goals, plus goals ended during this match that already have observations in it.
+const observedGoalIds = [...new Set(observations.map((observation) => observation.goal_id))];
+const goalsQuery = supabase
+  .from("player_goals")
+  .select("id, text, active, created_at")
+  .eq("player_id", match.player.id);
+const { data: goals, error: goalsError } = await (
+  observedGoalIds.length === 0
+    ? goalsQuery.eq("active", true)
+    : goalsQuery.or(`active.eq.true,id.in.(${observedGoalIds.join(",")})`)
+)
+  .order("created_at", { ascending: true })
+  .overrideTypes<(PlayerGoal & { active: boolean })[], { merge: false }>();
 if (goalsError) {
   // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
   console.error("Failed to load goals for match", { id: match.id, error: goalsError });
@@ -87,31 +118,14 @@ const firstServer = match.first_server === "player" ? match.player.name : "Przec
           {match.player.name}
         </h1>
 
-        <section
-          aria-labelledby="goals-heading"
-          class="mb-4 rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm"
-        >
-          <h2 id="goals-heading" class="text-xs font-semibold tracking-wide text-blue-100/70 uppercase">
-            Cele
-          </h2>
-          {goals.length === 0 ? (
-            <p class="text-blue-100/70">
-              Brak aktywnych celów ·{" "}
-              <a
-                href={`/players/${match.player.id}`}
-                class="text-purple-300 transition-colors hover:text-purple-100 hover:underline"
-              >
-                Dodaj cele
-              </a>
-            </p>
-          ) : (
-            <ul class="list-inside list-disc">
-              {goals.map((goal) => (
-                <li class="truncate">{goal.text}</li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <MatchNotes
+          client:load
+          matchId={match.id}
+          playerId={match.player.id}
+          goals={goals.map(({ id, text, active }) => ({ id, text, active }))}
+          initialObservations={observations}
+          initialNotes={notes}
+        />
 
         <MatchRecorder
           client:load

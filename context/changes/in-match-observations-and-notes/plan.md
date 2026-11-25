@@ -14,7 +14,7 @@ Rodzic podczas meczu zaznacza obserwację przy celu zawodnika jednym dotknięcie
 ## Desired End State
 
 - Na ekranie meczu każdy cel w sekcji „Cele” jest dużym przyciskiem. Dotknięcie dodaje obserwację i zwiększa licznik przy celu. Mały przycisk „−” cofa ostatnią obserwację tego celu w tym meczu.
-- Pod sekcją celów jest pole „Notatka” (najwyżej 200 znaków) z przyciskiem „Dodaj”. Notatki meczu pokazują się listą od najstarszej, a każdą można usunąć po potwierdzeniu.
+- Pod celami jest przycisk „Notatki (N)”, który rozwija pole notatki (najwyżej 200 znaków) z przyciskiem „Dodaj”. Domyślnie jest zwinięty, żeby nie spychać przycisków punktów. Notatki meczu pokazują się listą od najstarszej, a każdą można usunąć po potwierdzeniu.
 - Obserwacje i notatki zapisują się od razu na telefonie i trafiają na serwer w kolejności dotknięć. Bez sieci czekają i są ponawiane. Wczytanie strony bez sieci po powrocie nie gubi niezsynchronizowanych zmian.
 - Cel zakończony w trakcie meczu, który ma już obserwacje w tym meczu, nadal jest widoczny na ekranie meczu z licznikiem.
 - Obserwacje i notatki widzi i zmienia wyłącznie właściciel konta. Obserwacja może wskazać tylko cel zawodnika tego meczu, co pilnuje baza.
@@ -242,9 +242,9 @@ Migracja tylko dodaje tabele, klucze unikalne i zmienia jedną politykę. Istnie
 
 #### Automated
 
-- [ ] 1.1 Testy przechodzą: `npm test`
-- [ ] 1.2 Lint przechodzi: `npm run lint`
-- [ ] 1.3 Typy przechodzą: `npx astro check`
+- [x] 1.1 Testy przechodzą: `npm test` — 4fb755a
+- [x] 1.2 Lint przechodzi: `npm run lint` — 4fb755a
+- [x] 1.3 Typy przechodzą: `npx astro check` — 4fb755a
 
 ### Phase 2: Trasy, kolejka i wyspa na ekranie meczu
 
