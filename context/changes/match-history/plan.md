@@ -221,7 +221,7 @@ Polityka i `grant delete`. Wycofanie kodu jest bezpieczne, bo poprzednia wersja 
 
 #### Manual
 
-- [ ] 3.3 `npx supabase db push` na produkcji przed merge, potwierdzony przez `npx supabase migration list --linked`
-- [ ] 3.4 Po merge job `deploy` i smoke produkcyjny zielone
+- [x] 3.3 `npx supabase db push` na produkcji przed merge, potwierdzony przez `npx supabase migration list --linked`
+- [x] 3.4 Po merge job `deploy` i smoke produkcyjny zielone — 71eabe6
 - [ ] 3.5 Na telefonie na produkcji: historia i usunięcie testowego meczu działają
-- [ ] 3.6 Dziennik wdrożeń uzupełniony
+- [x] 3.6 Dziennik wdrożeń uzupełniony
