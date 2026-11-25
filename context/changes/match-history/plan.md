@@ -210,7 +210,7 @@ Polityka i `grant delete`. Wycofanie kodu jest bezpieczne, bo poprzednia wersja 
 
 #### Manual
 
-- [ ] 2.5 Na telefonie: lista pokazuje mecze od najnowszego, wiersz otwiera podsumowanie, a usunięcie wymaga rozwinięcia i drugiego przycisku i wraca na listę z komunikatem
+- [x] 2.5 Na telefonie: lista pokazuje mecze od najnowszego, wiersz otwiera podsumowanie, a usunięcie wymaga rozwinięcia i drugiego przycisku i wraca na listę z komunikatem
 
 ### Phase 3: Smoke i wdrożenie
 
@@ -223,5 +223,5 @@ Polityka i `grant delete`. Wycofanie kodu jest bezpieczne, bo poprzednia wersja 
 
 - [x] 3.3 `npx supabase db push` na produkcji przed merge, potwierdzony przez `npx supabase migration list --linked`
 - [x] 3.4 Po merge job `deploy` i smoke produkcyjny zielone — 71eabe6
-- [ ] 3.5 Na telefonie na produkcji: historia i usunięcie testowego meczu działają
+- [x] 3.5 Na telefonie na produkcji: historia i usunięcie testowego meczu działają
 - [x] 3.6 Dziennik wdrożeń uzupełniony

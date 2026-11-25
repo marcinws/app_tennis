@@ -1,7 +1,7 @@
 ---
 change_id: match-history
 title: Historia meczów z podglądem i usuwaniem
-status: implementing
+status: implemented
 created: 2026-11-25
 updated: 2026-11-25
 archived_at: null
