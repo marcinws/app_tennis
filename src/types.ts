@@ -25,3 +25,14 @@ export interface PlayerGoal {
   text: string;
   created_at: string;
 }
+
+export interface MatchObservation {
+  id: string;
+  goal_id: string;
+}
+
+export interface MatchNote {
+  id: string;
+  text: string;
+  created_at: string;
+}
