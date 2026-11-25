@@ -1,7 +1,7 @@
 ---
 change_id: review-fixes-in-match-observations
 title: Poprawki z przeglądu kodu S-07 (kolejka obserwacji i notatek)
-status: implementing
+status: implemented
 created: 2026-11-25
 updated: 2026-11-25
 archived_at: null

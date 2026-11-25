@@ -101,4 +101,4 @@ Przegląd `/code-review 13` (PR #13, S-07) znalazł dwa błędy, które przy sł
 #### Manual
 
 - [x] 1.7 Po merge job `deploy` i smoke produkcyjny zielone — b62de76
-- [ ] 1.8 Na telefonie: obserwacje, „−” i notatki działają jak wcześniej
+- [x] 1.8 Na telefonie: obserwacje, „−” i notatki działają jak wcześniej
