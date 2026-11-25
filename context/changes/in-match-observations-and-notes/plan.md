@@ -257,8 +257,8 @@ Migracja tylko dodaje tabele, klucze unikalne i zmienia jedną politykę. Istnie
 
 #### Manual
 
-- [ ] 2.5 Na telefonie: dotknięcie celu zwiększa licznik, „−” go zmniejsza, notatka dodaje się i usuwa po potwierdzeniu, a przyciski punktów zostają na ekranie bez przewijania przy 3 celach
-- [ ] 2.6 Na telefonie w trybie samolotowym: obserwacje i notatki dodane bez sieci zostają po przeładowaniu strony i trafiają na serwer po powrocie sieci
+- [x] 2.5 Na telefonie: dotknięcie celu zwiększa licznik, „−” go zmniejsza, notatka dodaje się i usuwa po potwierdzeniu, a przyciski punktów zostają na ekranie bez przewijania przy 3 celach
+- [x] 2.6 Na telefonie w trybie samolotowym: obserwacje i notatki dodane bez sieci zostają po przeładowaniu strony i trafiają na serwer po powrocie sieci
 
 ### Phase 3: Smoke i wdrożenie
 
@@ -272,5 +272,5 @@ Migracja tylko dodaje tabele, klucze unikalne i zmienia jedną politykę. Istnie
 - [x] 3.3 Ustawienia produkcyjnego projektu Supabase sprawdzone przed `db push`
 - [x] 3.4 `npx supabase db push` na produkcji przed merge
 - [x] 3.5 Po merge job `deploy` i smoke produkcyjny zielone — 3ee8db2
-- [ ] 3.6 Na telefonie na produkcji: obserwacje i notatki zapisane w meczu
+- [x] 3.6 Na telefonie na produkcji: obserwacje i notatki zapisane w meczu
 - [x] 3.7 Dziennik wdrożeń uzupełniony
