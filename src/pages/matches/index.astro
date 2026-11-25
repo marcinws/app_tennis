@@ -1,0 +1,89 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Topbar from "@/components/Topbar.astro";
+import { createClient } from "@/lib/supabase";
+import { historyNotice, MATCH_HISTORY_LIMIT, matchFormatLabel } from "@/lib/services/matches";
+
+interface HistoryMatch {
+  id: string;
+  tournament_name: string | null;
+  format: string;
+  created_at: string;
+  // Embedded record from `players(name)`.
+  player: { name: string };
+}
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+if (!supabase) {
+  return new Response("Supabase nie jest skonfigurowany", { status: 500 });
+}
+
+// No `events`: the list shows no score, so its cost does not grow with the length of the matches.
+const { data: rows, error } = await supabase
+  .from("matches")
+  .select("id, tournament_name, format, created_at, player:players(name)")
+  .order("created_at", { ascending: false })
+  .limit(MATCH_HISTORY_LIMIT + 1)
+  .overrideTypes<HistoryMatch[], { merge: false }>();
+if (error) {
+  // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this failure is visible
+  console.error("Failed to load match history", error);
+  return new Response("Nie udało się wczytać historii meczów", { status: 500 });
+}
+const truncated = rows.length > MATCH_HISTORY_LIMIT;
+const matches = rows.slice(0, MATCH_HISTORY_LIMIT);
+const notice = historyNotice(Astro.url.searchParams);
+const startedAt = (createdAt: string) =>
+  new Date(createdAt).toLocaleString("pl-PL", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Warsaw" });
+---
+
+<Layout title="Historia meczów">
+  <div class="bg-cosmic min-h-screen p-4">
+    <div class="mx-auto max-w-xl">
+      <Topbar />
+      <div class="space-y-4 rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl">
+        <h1 class="bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-3xl font-bold text-transparent">
+          Historia meczów
+        </h1>
+
+        {notice?.kind === "deleted" && (
+          <p role="status" class="rounded-lg border border-green-400/40 bg-green-500/20 px-3 py-2 text-sm">
+            Mecz usunięty
+          </p>
+        )}
+        {notice?.kind === "error" && (
+          <p role="alert" class="rounded-lg border border-red-400/40 bg-red-500/20 px-3 py-2 text-sm text-red-100">
+            {notice.message}
+          </p>
+        )}
+
+        {matches.length === 0 ? (
+          <p class="text-blue-100/70">Brak meczów</p>
+        ) : (
+          <ul class="space-y-2">
+            {matches.map((match) => (
+              <li>
+                <a
+                  href={`/matches/${match.id}/summary`}
+                  class="block rounded-lg border border-white/20 bg-white/5 px-3 py-2 transition-colors hover:bg-white/10"
+                >
+                  <span class="block font-semibold">{match.player.name}</span>
+                  <span class="block text-sm text-blue-100/80">{match.tournament_name ?? "Bez nazwy turnieju"}</span>
+                  <span class="block text-xs text-blue-100/60">
+                    {startedAt(match.created_at)} · {matchFormatLabel(match.format) ?? match.format}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {truncated && <p class="text-xs text-blue-100/60">Pokazano {MATCH_HISTORY_LIMIT} najnowszych meczów</p>}
+
+        <a href="/matches/new" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+          Nowy mecz
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>
