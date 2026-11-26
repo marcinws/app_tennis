@@ -3,13 +3,13 @@ project: Tennis Match Companion
 version: 1
 status: draft
 created: 2026-11-13
-updated: 2026-11-25
+updated: 2026-11-26
 prd_version: 1
 main_goal: speed
 top_blocker: time
 milestone_id: first-real-match-recorded
 milestone_seq: 1
-milestone_status: open
+milestone_status: done
 ---
 
 # Roadmap: Tennis Match Companion
@@ -21,7 +21,7 @@ milestone_status: open
 
 ## Milestone
 
-**M-1: Prawdziwy mecz zapisany na telefonie** — Status: open
+**M-1: Prawdziwy mecz zapisany na telefonie** — Status: done
 
 - **Intent:** Rodzic zapisuje na telefonie cały prawdziwy mecz dziecka — wynik, cele, obserwacje i notatki — i po meczu widzi poprawny wynik z podsumowaniem, a zapisane punkty nie przepadają przy utracie sieci.
 - **Source materials:** `context/foundation/prd.md` (v1)
@@ -222,8 +222,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Open Roadmap Questions
 
-1. **Czy 18 obowiązkowych wymagań zmieści się w 15–30 godzinach pracy?** Zakres jest ambitny i może wymagać cięcia podczas pracy. — Owner: autor projektu. Block: roadmap-wide; wrócić po dostarczeniu `S-03` (pierwszy kandydat do cięcia: `S-05`).
-2. **Jak „web-app” ma się do wymagania działania na telefonach z Androidem?** Notatki podają oba założenia i trzeba je uwzględnić przy wyborze technologii. — Owner: autor projektu. Block: none; `tech-stack.md` wybrał aplikację w przeglądarce telefonu, do potwierdzenia testem na Androidzie przy `S-03`.
+1. **Czy 18 obowiązkowych wymagań zmieści się w 15–30 godzinach pracy?** Zakres jest ambitny i może wymagać cięcia podczas pracy. — Owner: autor projektu. Block: none. Rozstrzygnięte 2026-11-26: wszystkie wycinki M-1 dostarczone, bez cięcia zakresu.
+2. **Jak „web-app” ma się do wymagania działania na telefonach z Androidem?** Notatki podają oba założenia i trzeba je uwzględnić przy wyborze technologii. — Owner: autor projektu. Block: none; `tech-stack.md` wybrał aplikację w przeglądarce telefonu. Rozstrzygnięte 2026-11-26: działanie potwierdzone kontrolą na telefonie.
 3. **Czy limit 10 ms czasu procesora na żądanie w planie Free Cloudflare wystarczy?** Pierwsze wdrożenie zmierzyło 13 ms i 56 ms przy zimnym starcie. — Owner: autor projektu. Block: none; obserwować błędy 1102 w Workers Logs, szczególnie po `S-03`.
 
 ## Parked
@@ -237,6 +237,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Lista turniejów** — Why parked: PRD §Non-Goals, nazwa turnieju wpisywana przy meczu lub po nim.
 
 ## Milestone History
+
+- **M-1: Prawdziwy mecz zapisany na telefonie** (`first-real-match-recorded`) — closed 2026-11-26. Rodzic zapisuje na telefonie cały mecz (wynik we wszystkich formatach, cele, obserwacje, notatki), widzi podsumowanie i historię; F-01 oraz S-01–S-09 dostarczone.
 
 ## Done
 
