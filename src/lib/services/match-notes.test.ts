@@ -9,6 +9,7 @@ import {
   type MatchNotesState,
   MAX_QUEUED_OPS,
   NOTE_TEXT_MAX_LENGTH,
+  NOTES_REJECTION_CODES,
   type NotesOp,
   notesStorageKey,
   appendRejected,
@@ -186,14 +187,32 @@ describe("interpretNotesResponse", () => {
     expect(interpretNotesResponse({ kind: "http", status: 401, body: null })).toEqual({ kind: "unauthorized" });
   });
 
-  it("rejects other client errors with their code", () => {
+  it.each(NOTES_REJECTION_CODES)("rejects a client error carrying the route code %s", (code) => {
+    expect(interpretNotesResponse({ kind: "http", status: 400, body: { error: code } })).toEqual({
+      kind: "rejected",
+      error: code,
+    });
+  });
+
+  it("rejects goal_not_found sent as 404", () => {
     expect(interpretNotesResponse({ kind: "http", status: 404, body: { error: "goal_not_found" } })).toEqual({
       kind: "rejected",
       error: "goal_not_found",
     });
-    expect(interpretNotesResponse({ kind: "http", status: 400, body: null })).toEqual({
-      kind: "rejected",
-      error: "http_400",
+  });
+
+  // Regression (observability audit 2026-11-26, N1): a 4xx that did not come from the notes routes
+  // (a WAF block, an HTML 404 after a deploy, a platform 413) says nothing about the entry, so dropping it lost data.
+  it.each([
+    ["a WAF 403 without a body", 403, null],
+    ["an HTML 404 the hook could not parse", 404, null],
+    ["a platform 413 without a body", 413, null],
+    ["a 400 with an unknown code", 400, { error: "something_else" }],
+    ["a 400 with JSON but no error field", 400, { message: "x" }],
+  ])("retries %s", (_, status, body) => {
+    expect(interpretNotesResponse({ kind: "http", status, body })).toEqual({
+      kind: "retry",
+      reason: `http_${status}`,
     });
   });
 

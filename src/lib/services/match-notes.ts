@@ -193,6 +193,24 @@ export type NotesSyncOutcome =
   | { kind: "rejected"; error: string }
   | { kind: "retry"; reason: string };
 
+// Every client-error code the notes and observations routes return. Only these prove the entry itself
+// is wrong; the routes type their rejections with NotesRejectionCode, so the two lists cannot drift.
+export const NOTES_REJECTION_CODES = [
+  "not_found",
+  "payload_too_large",
+  "invalid_body",
+  "match_not_found",
+  "goal_not_found",
+  "text_empty",
+  "text_too_long",
+] as const;
+
+export type NotesRejectionCode = (typeof NOTES_REJECTION_CODES)[number];
+
+function isNotesRejectionCode(value: unknown): value is NotesRejectionCode {
+  return typeof value === "string" && (NOTES_REJECTION_CODES as readonly string[]).includes(value);
+}
+
 function errorCode(body: unknown, status: number): string {
   return isRecord(body) && typeof body.error === "string" ? body.error : `http_${status}`;
 }
@@ -217,9 +235,14 @@ export function interpretNotesResponse(response: SyncResponse): NotesSyncOutcome
   if (status === 408 || status === 429) {
     return { kind: "retry", reason: errorCode(body, status) };
   }
-  // A retry cannot fix any other client error.
   if (status >= 400 && status < 500) {
-    return { kind: "rejected", error: errorCode(body, status) };
+    // Only a route code proves the entry itself is wrong, so only then does it leave the queue.
+    if (isRecord(body) && isNotesRejectionCode(body.error)) {
+      return { kind: "rejected", error: body.error };
+    }
+    // Any other client error (a WAF block, an HTML 404 after a deploy, a platform 413) says nothing
+    // about the entry; dropping it would lose the parent's data, so it waits for a retry instead.
+    return { kind: "retry", reason: `http_${status}` };
   }
   return { kind: "retry", reason: errorCode(body, status) };
 }
