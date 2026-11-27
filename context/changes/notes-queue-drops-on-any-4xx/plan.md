@@ -196,26 +196,26 @@ Brak migracji. Wpisy, które telefony już odrzuciły, zostają w `:rejected` i 
 
 #### Automated
 
-- [x] 1.1 Nowe testy regresji nie przechodzą przed zmianą w match-notes.ts
-- [x] 1.2 Po zmianie wszystkie testy jednostkowe przechodzą
-- [x] 1.3 Typy przechodzą
-- [x] 1.4 Lint przechodzi
+- [x] 1.1 Nowe testy regresji nie przechodzą przed zmianą w match-notes.ts — 41f1629
+- [x] 1.2 Po zmianie wszystkie testy jednostkowe przechodzą — 41f1629
+- [x] 1.3 Typy przechodzą — 41f1629
+- [x] 1.4 Lint przechodzi — 41f1629
 
 #### Manual
 
-- [x] 1.5 Zablokowany 403 PUT notatki zostawia ją na ekranie ze statusem „ponawiam”, a po zdjęciu blokady zapisuje się
+- [x] 1.5 Zablokowany 403 PUT notatki zostawia ją na ekranie ze statusem „ponawiam”, a po zdjęciu blokady zapisuje się — 41f1629
 
 ### Phase 2: Logi odrzuceń w trasach notatek i obserwacji
 
 #### Automated
 
-- [ ] 2.1 Typy przechodzą
-- [ ] 2.2 Lint przechodzi
-- [ ] 2.3 Testy jednostkowe przechodzą
-- [ ] 2.4 Build przechodzi
+- [x] 2.1 Typy przechodzą
+- [x] 2.2 Lint przechodzi
+- [x] 2.3 Testy jednostkowe przechodzą
+- [x] 2.4 Build przechodzi
 
 #### Manual
 
-- [ ] 2.5 PUT notatki z pustym tekstem zwraca 400 text_empty i loguje Rejected a match note request z kontekstem
-- [ ] 2.6 Obserwacja z nieistniejącym celem zwraca 404 goal_not_found i loguje Rejected a match observation request
-- [ ] 2.7 Zwykłe dodanie i usunięcie notatki i obserwacji działa bez ostrzeżenia
+- [x] 2.5 PUT notatki z pustym tekstem zwraca 400 text_empty i loguje Rejected a match note request z kontekstem
+- [x] 2.6 Obserwacja z nieistniejącym celem zwraca 404 goal_not_found i loguje Rejected a match observation request
+- [x] 2.7 Zwykłe dodanie i usunięcie notatki i obserwacji działa bez ostrzeżenia

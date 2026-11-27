@@ -1,7 +1,7 @@
-import type { APIRoute } from "astro";
+import type { APIContext, APIRoute } from "astro";
 import { z } from "astro/zod";
 import { createClient } from "@/lib/supabase";
-import { parseNoteText } from "@/lib/services/match-notes";
+import { type NotesRejectionCode, parseNoteText } from "@/lib/services/match-notes";
 
 const UNIQUE_VIOLATION = "23505";
 // The match is missing or belongs to another account (composite FK on match_notes).
@@ -14,6 +14,22 @@ const bodySchema = z.object({ text: z.string() });
 
 function json(body: unknown, status: number) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+}
+
+// Every client error goes through here, so the reason a phone's entry was refused is in the server log.
+// Ids are logged as received; the request body (note text) is not.
+function rejected(context: APIContext, code: NotesRejectionCode, status: number) {
+  // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this rejection is visible
+  console.warn("Rejected a match note request", {
+    route: "notes",
+    method: context.request.method,
+    matchId: context.params.id ?? null,
+    noteId: context.params.noteId ?? null,
+    userId: context.locals.user?.id ?? null,
+    error: code,
+    status,
+  });
+  return json({ error: code }, status);
 }
 
 function saveFailed(message: string, cause: unknown) {
@@ -32,26 +48,26 @@ function parseIds(params: Record<string, string | undefined>) {
 export const PUT: APIRoute = async (context) => {
   const ids = parseIds(context.params);
   if (!ids) {
-    return json({ error: "not_found" }, 404);
+    return rejected(context, "not_found", 404);
   }
   const contentLength = context.request.headers.get("Content-Length");
   if (contentLength !== null && Number(contentLength) > MAX_BODY_BYTES) {
-    return json({ error: "payload_too_large" }, 413);
+    return rejected(context, "payload_too_large", 413);
   }
   let rawBody: unknown;
   try {
     rawBody = await context.request.json();
   } catch {
     // Malformed JSON is a client error; the 400 below is the handling.
-    return json({ error: "invalid_body" }, 400);
+    return rejected(context, "invalid_body", 400);
   }
   const parsedBody = bodySchema.safeParse(rawBody);
   if (!parsedBody.success) {
-    return json({ error: "invalid_body" }, 400);
+    return rejected(context, "invalid_body", 400);
   }
   const parsedText = parseNoteText(parsedBody.data.text);
   if (!parsedText.ok) {
-    return json({ error: parsedText.error }, 400);
+    return rejected(context, parsedText.error, 400);
   }
 
   const supabase = createClient(context.request.headers, context.cookies);
@@ -68,7 +84,7 @@ export const PUT: APIRoute = async (context) => {
       return json({ id: ids.noteId }, 200);
     }
     if (insertError.code === FOREIGN_KEY_VIOLATION) {
-      return json({ error: "match_not_found" }, 404);
+      return rejected(context, "match_not_found", 404);
     }
     return saveFailed("Failed to save note", insertError);
   }
@@ -79,7 +95,7 @@ export const PUT: APIRoute = async (context) => {
 export const DELETE: APIRoute = async (context) => {
   const ids = parseIds(context.params);
   if (!ids) {
-    return json({ error: "not_found" }, 404);
+    return rejected(context, "not_found", 404);
   }
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
