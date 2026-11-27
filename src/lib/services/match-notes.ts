@@ -7,10 +7,11 @@ export const NOTE_TEXT_MAX_LENGTH = 200;
 // Upper bound for the queue read back from the phone; far above what one match produces.
 export const MAX_QUEUED_OPS = 1000;
 
+// The notes route returns these codes as they are, so each must also be a rejection code below.
 export const NOTE_ERROR_MESSAGES = {
   text_empty: "Wpisz treść notatki",
   text_too_long: `Notatka może mieć najwyżej ${NOTE_TEXT_MAX_LENGTH} znaków`,
-} as const;
+} as const satisfies Partial<Record<NotesRejectionCode, string>>;
 
 export type NoteErrorCode = keyof typeof NOTE_ERROR_MESSAGES;
 
@@ -193,6 +194,24 @@ export type NotesSyncOutcome =
   | { kind: "rejected"; error: string }
   | { kind: "retry"; reason: string };
 
+// Every client-error code the notes and observations routes return. Only these prove the entry itself
+// is wrong; the routes type their rejections with NotesRejectionCode, so the two lists cannot drift.
+export const NOTES_REJECTION_CODES = [
+  "not_found",
+  "payload_too_large",
+  "invalid_body",
+  "match_not_found",
+  "goal_not_found",
+  "text_empty",
+  "text_too_long",
+] as const;
+
+export type NotesRejectionCode = (typeof NOTES_REJECTION_CODES)[number];
+
+function isNotesRejectionCode(value: unknown): value is NotesRejectionCode {
+  return typeof value === "string" && (NOTES_REJECTION_CODES as readonly string[]).includes(value);
+}
+
 function errorCode(body: unknown, status: number): string {
   return isRecord(body) && typeof body.error === "string" ? body.error : `http_${status}`;
 }
@@ -217,9 +236,14 @@ export function interpretNotesResponse(response: SyncResponse): NotesSyncOutcome
   if (status === 408 || status === 429) {
     return { kind: "retry", reason: errorCode(body, status) };
   }
-  // A retry cannot fix any other client error.
   if (status >= 400 && status < 500) {
-    return { kind: "rejected", error: errorCode(body, status) };
+    // Only a route code proves the entry itself is wrong, so only then does it leave the queue.
+    if (isRecord(body) && isNotesRejectionCode(body.error)) {
+      return { kind: "rejected", error: body.error };
+    }
+    // Any other client error (a WAF block, an HTML 404 after a deploy, a platform 413) says nothing
+    // about the entry; dropping it would lose the parent's data, so it waits for a retry instead.
+    return { kind: "retry", reason: errorCode(body, status) };
   }
   return { kind: "retry", reason: errorCode(body, status) };
 }

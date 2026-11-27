@@ -215,6 +215,17 @@ function createMatchNotesStore(matchId: string, initial: MatchNotesState) {
         emit();
         return;
       case "retry":
+        // A client error that did not come from the notes routes stalls the whole queue until it clears;
+        // logged once per stalled operation, not on every retry.
+        if (attempt === 0 && response.kind === "http" && response.status >= 400 && response.status < 500) {
+          // eslint-disable-next-line no-console -- no error tracker yet; the status line also shows it
+          console.error("Match note sync stalled on a client error", {
+            matchId,
+            opType: op.type,
+            status: response.status,
+            reason: outcome.reason,
+          });
+        }
         syncStatus =
           outcome.reason === "network_error" ? { kind: "waiting" } : { kind: "error", detail: outcome.reason };
         emit();
