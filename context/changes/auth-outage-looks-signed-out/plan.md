@@ -153,21 +153,21 @@ Middleware używa klasyfikacji. Awaria jest widoczna w logu i ponawiana przez kl
 
 #### Automated
 
-- [x] 1.1 Nowe testy nie przechodzą przed dodaniem funkcji
-- [x] 1.2 Po zmianie wszystkie testy jednostkowe przechodzą
-- [x] 1.3 Typy przechodzą
-- [x] 1.4 Lint przechodzi
+- [x] 1.1 Nowe testy nie przechodzą przed dodaniem funkcji — 023467d
+- [x] 1.2 Po zmianie wszystkie testy jednostkowe przechodzą — 023467d
+- [x] 1.3 Typy przechodzą — 023467d
+- [x] 1.4 Lint przechodzi — 023467d
 
 ### Phase 2: Middleware loguje awarię i zwraca 503
 
 #### Automated
 
-- [ ] 2.1 Typy przechodzą
-- [ ] 2.2 Lint przechodzi
-- [ ] 2.3 Testy jednostkowe przechodzą
-- [ ] 2.4 Build przechodzi
+- [x] 2.1 Typy przechodzą
+- [x] 2.2 Lint przechodzi
+- [x] 2.3 Testy jednostkowe przechodzą
+- [x] 2.4 Build przechodzi
 
 #### Manual
 
-- [ ] 2.5 Zatrzymany Supabase daje „ponawiam” i log Supabase Auth unavailable, a po starcie punkty zapisują się bez logowania
-- [ ] 2.6 Wylogowany użytkownik na /matches trafia na /auth/signin
+- [x] 2.5 Zatrzymany Supabase daje „ponawiam” i log Supabase Auth unavailable, a po starcie punkty zapisują się bez logowania
+- [x] 2.6 Wylogowany użytkownik na /matches trafia na /auth/signin
