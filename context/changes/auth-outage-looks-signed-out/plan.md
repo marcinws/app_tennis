@@ -162,12 +162,12 @@ Middleware używa klasyfikacji. Awaria jest widoczna w logu i ponawiana przez kl
 
 #### Automated
 
-- [x] 2.1 Typy przechodzą
-- [x] 2.2 Lint przechodzi
-- [x] 2.3 Testy jednostkowe przechodzą
-- [x] 2.4 Build przechodzi
+- [x] 2.1 Typy przechodzą — dc6b8ab
+- [x] 2.2 Lint przechodzi — dc6b8ab
+- [x] 2.3 Testy jednostkowe przechodzą — dc6b8ab
+- [x] 2.4 Build przechodzi — dc6b8ab
 
 #### Manual
 
-- [x] 2.5 Zatrzymany Supabase daje „ponawiam” i log Supabase Auth unavailable, a po starcie punkty zapisują się bez logowania
-- [x] 2.6 Wylogowany użytkownik na /matches trafia na /auth/signin
+- [x] 2.5 Zatrzymany Supabase daje „ponawiam” i log Supabase Auth unavailable, a po starcie punkty zapisują się bez logowania — dc6b8ab
+- [x] 2.6 Wylogowany użytkownik na /matches trafia na /auth/signin — dc6b8ab
