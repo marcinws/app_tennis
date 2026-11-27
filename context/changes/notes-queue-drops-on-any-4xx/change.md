@@ -1,9 +1,9 @@
 ---
 change_id: notes-queue-drops-on-any-4xx
 title: Kolejka notatek nie usuwa wpisów przy obcych odpowiedziach 4xx
-status: implementing
+status: implemented
 created: 2026-11-26
-updated: 2026-11-26
+updated: 2026-11-27
 archived_at: null
 ---
 

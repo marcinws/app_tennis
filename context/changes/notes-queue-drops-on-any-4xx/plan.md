@@ -209,13 +209,13 @@ Brak migracji. Wpisy, które telefony już odrzuciły, zostają w `:rejected` i 
 
 #### Automated
 
-- [x] 2.1 Typy przechodzą
-- [x] 2.2 Lint przechodzi
-- [x] 2.3 Testy jednostkowe przechodzą
-- [x] 2.4 Build przechodzi
+- [x] 2.1 Typy przechodzą — f28d4a9
+- [x] 2.2 Lint przechodzi — f28d4a9
+- [x] 2.3 Testy jednostkowe przechodzą — f28d4a9
+- [x] 2.4 Build przechodzi — f28d4a9
 
 #### Manual
 
-- [x] 2.5 PUT notatki z pustym tekstem zwraca 400 text_empty i loguje Rejected a match note request z kontekstem
-- [x] 2.6 Obserwacja z nieistniejącym celem zwraca 404 goal_not_found i loguje Rejected a match observation request
+- [x] 2.5 PUT notatki z pustym tekstem zwraca 400 text_empty i loguje Rejected a match note request z kontekstem — f28d4a9
+- [x] 2.6 Obserwacja z nieistniejącym celem zwraca 404 goal_not_found i loguje Rejected a match observation request — f28d4a9
 - [x] 2.7 Zwykłe dodanie i usunięcie notatki i obserwacji działa bez ostrzeżenia
