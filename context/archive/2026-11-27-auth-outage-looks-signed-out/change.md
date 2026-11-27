@@ -1,10 +1,10 @@
 ---
 change_id: auth-outage-looks-signed-out
 title: Awaria Supabase Auth nie wygląda jak wylogowanie
-status: impl_reviewed
+status: archived
 created: 2026-11-27
 updated: 2026-11-27
-archived_at: null
+archived_at: 2026-11-27T07:45:18Z
 ---
 
 ## Notes
