@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyAuthError } from "./auth";
+import { authDecision, classifyAuthError } from "./auth";
 
 describe("classifyAuthError", () => {
   it("treats no error as ok", () => {
@@ -25,5 +25,20 @@ describe("classifyAuthError", () => {
     ["an error without a status", { name: "AuthUnknownError" }],
   ])("treats %s as unavailable", (_, error) => {
     expect(classifyAuthError(error)).toBe("unavailable");
+  });
+});
+
+describe("authDecision", () => {
+  // Regression (impl review of auth-outage-looks-signed-out, F1): the middleware branching had no test,
+  // so a flipped condition would turn an Auth outage back into a sign-in redirect without failing CI.
+  it.each([
+    ["a signed-in user on a protected page", "ok", "/matches", true, true, "next"],
+    ["an anonymous visitor on a public page", "signed_out", "/", false, false, "next"],
+    ["a signed-out user on a protected page", "signed_out", "/matches", true, false, "redirect"],
+    ["an outage on a protected API route", "unavailable", "/api/matches/1/log", true, false, "unavailable_json"],
+    ["an outage on a protected page", "unavailable", "/matches/1", true, false, "unavailable_text"],
+    ["an outage on a public page", "unavailable", "/auth/signin", false, false, "next"],
+  ] as const)("%s", (_, outcome, pathname, isProtected, hasUser, expected) => {
+    expect(authDecision({ outcome, pathname, isProtected, hasUser })).toBe(expected);
   });
 });
