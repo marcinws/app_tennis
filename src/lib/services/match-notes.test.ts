@@ -204,16 +204,14 @@ describe("interpretNotesResponse", () => {
   // Regression (observability audit 2026-11-26, N1): a 4xx that did not come from the notes routes
   // (a WAF block, an HTML 404 after a deploy, a platform 413) says nothing about the entry, so dropping it lost data.
   it.each([
-    ["a WAF 403 without a body", 403, null],
-    ["an HTML 404 the hook could not parse", 404, null],
-    ["a platform 413 without a body", 413, null],
-    ["a 400 with an unknown code", 400, { error: "something_else" }],
-    ["a 400 with JSON but no error field", 400, { message: "x" }],
-  ])("retries %s", (_, status, body) => {
-    expect(interpretNotesResponse({ kind: "http", status, body })).toEqual({
-      kind: "retry",
-      reason: `http_${status}`,
-    });
+    ["a WAF 403 without a body", 403, null, "http_403"],
+    ["an HTML 404 the hook could not parse", 404, null, "http_404"],
+    ["a platform 413 without a body", 413, null, "http_413"],
+    // The unknown code is the best clue for a stuck queue, so it is kept as the reason.
+    ["a 400 with an unknown code", 400, { error: "something_else" }, "something_else"],
+    ["a 400 with JSON but no error field", 400, { message: "x" }, "http_400"],
+  ])("retries %s", (_, status, body, reason) => {
+    expect(interpretNotesResponse({ kind: "http", status, body })).toEqual({ kind: "retry", reason });
   });
 
   // Regression (review of S-07): a timeout or rate limit is temporary, so dropping the entry loses data.

@@ -7,10 +7,11 @@ export const NOTE_TEXT_MAX_LENGTH = 200;
 // Upper bound for the queue read back from the phone; far above what one match produces.
 export const MAX_QUEUED_OPS = 1000;
 
+// The notes route returns these codes as they are, so each must also be a rejection code below.
 export const NOTE_ERROR_MESSAGES = {
   text_empty: "Wpisz treść notatki",
   text_too_long: `Notatka może mieć najwyżej ${NOTE_TEXT_MAX_LENGTH} znaków`,
-} as const;
+} as const satisfies Partial<Record<NotesRejectionCode, string>>;
 
 export type NoteErrorCode = keyof typeof NOTE_ERROR_MESSAGES;
 
@@ -242,7 +243,7 @@ export function interpretNotesResponse(response: SyncResponse): NotesSyncOutcome
     }
     // Any other client error (a WAF block, an HTML 404 after a deploy, a platform 413) says nothing
     // about the entry; dropping it would lose the parent's data, so it waits for a retry instead.
-    return { kind: "retry", reason: `http_${status}` };
+    return { kind: "retry", reason: errorCode(body, status) };
   }
   return { kind: "retry", reason: errorCode(body, status) };
 }

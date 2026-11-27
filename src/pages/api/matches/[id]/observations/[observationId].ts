@@ -15,15 +15,19 @@ function json(body: unknown, status: number) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
+function clip(value: string | undefined): string | null {
+  return value === undefined ? null : value.slice(0, 64);
+}
+
 // Every client error goes through here, so the reason a phone's entry was refused is in the server log.
-// Ids are logged as received; the request body is not.
+// Ids are logged as received (clipped, so an oversized path cannot bloat the log); the request body is not.
 function rejected(context: APIContext, code: NotesRejectionCode, status: number) {
   // eslint-disable-next-line no-console -- no error tracker yet; the server log is the only place this rejection is visible
   console.warn("Rejected a match observation request", {
     route: "observations",
     method: context.request.method,
-    matchId: context.params.id ?? null,
-    observationId: context.params.observationId ?? null,
+    matchId: clip(context.params.id),
+    observationId: clip(context.params.observationId),
     userId: context.locals.user?.id ?? null,
     error: code,
     status,
