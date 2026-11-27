@@ -17,3 +17,28 @@ export function classifyAuthError(error: { name: string; status?: number } | nul
   }
   return "signed_out";
 }
+
+export type AuthDecision = "next" | "redirect" | "unavailable_json" | "unavailable_text";
+
+// What the middleware does with a request, once the Auth outcome is known. An outage on a protected
+// route answers 503 (JSON for the API, so the sync queues read the code and retry); an outage on a
+// public route carries on as anonymous; only a real sign-out is redirected to the sign-in page.
+export function authDecision({
+  outcome,
+  pathname,
+  isProtected,
+  hasUser,
+}: {
+  outcome: AuthOutcome;
+  pathname: string;
+  isProtected: boolean;
+  hasUser: boolean;
+}): AuthDecision {
+  if (!isProtected) {
+    return "next";
+  }
+  if (outcome === "unavailable") {
+    return pathname.startsWith("/api/") ? "unavailable_json" : "unavailable_text";
+  }
+  return hasUser ? "next" : "redirect";
+}

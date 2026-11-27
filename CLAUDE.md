@@ -35,7 +35,7 @@ Aplikacja Astro 7 w trybie SSR (`output: "server"`) z wyspami React 19, Tailwind
 ### Logowanie
 
 - `src/lib/supabase.ts` tworzy klienta Supabase SSR (`@supabase/ssr`) z sesją w ciasteczkach. `SUPABASE_URL` i `SUPABASE_KEY` to sekrety serwerowe z `astro:env/server`, zadeklarowane w `env.schema` w `astro.config.mjs`.
-- `src/middleware.ts` przy każdym żądaniu ustala użytkownika w `context.locals.user` i przekierowuje niezalogowanych z tras w `PROTECTED_ROUTES`.
+- `src/middleware.ts` przy każdym żądaniu ustala użytkownika w `context.locals.user` i przekierowuje niezalogowanych z tras w `PROTECTED_ROUTES`. Błędu z `getUser()` nie ignoruj: `classifyAuthError` i `authDecision` w `src/lib/services/auth.ts` odróżniają wylogowanie od niedostępnego Supabase Auth, przy którym chronione trasy dostają 503 `auth_unavailable` (z logiem `Supabase Auth unavailable`) zamiast przekierowania, żeby kolejki synchronizacji ponawiały zapis.
 - Endpointy: `src/pages/api/auth/{signin,signup,signout}.ts`. Strony: `src/pages/auth/{signin,signup,confirm-email}.astro`. Przykład chronionej strony: `src/pages/dashboard.astro`.
 
 ### Konwencje
